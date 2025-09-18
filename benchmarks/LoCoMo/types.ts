@@ -7,7 +7,7 @@ export interface LoCoMoBenchmarkItem {
   sample_id: string;
 }
 
-interface qaItem {
+export interface qaItem {
   question: string;
   answer: string | number;
   evidence: Array<string>;
