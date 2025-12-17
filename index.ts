@@ -8,11 +8,11 @@ const PROVIDERS: Record<string, TemplateType> = {
 	AQRAG: AQRAGProvider,
 };
 
-// Benchmark data registry
-const BENCHMARK_DATA: Record<
+// Benchmark data registry (legacy - use cli/index.ts for new CLI)
+const BENCHMARK_DATA: Partial<Record<
 	BenchmarkType,
 	BenchmarkRegistry[BenchmarkType][]
-> = {
+>> = {
 	RAG: ragBenchmarkData,
 };
 
@@ -169,6 +169,11 @@ Examples:
 		for (const benchmarkName of args.benchmarks) {
 			const benchmarkType = benchmarkName as BenchmarkType;
 			const benchmarkData = BENCHMARK_DATA[benchmarkType];
+
+			if (!benchmarkData) {
+				console.warn(`No data for benchmark: ${benchmarkType}`);
+				continue;
+			}
 
 			for (const providerName of args.providers) {
 				const provider = PROVIDERS[providerName]!;

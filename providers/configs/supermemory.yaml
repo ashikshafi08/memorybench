@@ -1,0 +1,61 @@
+name: supermemory
+displayName: "Supermemory.ai"
+description: "Production memory API from Supermemory"
+type: hosted
+tags:
+  - hosted
+  - production
+
+connection:
+  baseUrl: "${SUPERMEMORY_API_URL:-https://api.supermemory.ai/v3}"
+  timeout: 30000
+
+auth:
+  type: bearer
+  header: "Authorization"
+  envVar: "SUPERMEMORY_API_KEY"
+
+scoping:
+  strategy: containerTags
+  runIdFormat: "${benchmarkId}-${runId}"
+
+endpoints:
+  add:
+    method: POST
+    path: /documents
+    body:
+      content: "$.content"
+      containerTags: ["$.runTag"]
+
+  search:
+    method: POST
+    path: /search
+    body:
+      query: "$.query"
+      containerTags: ["$.runTag"]
+      limit: 10
+      threshold: 0.3
+      includeChunks: true
+    response:
+      results: "$.results"
+      contentField: "$.memory"
+      scoreField: "$.score"
+      chunksField: "$.chunks"
+
+  clear:
+    method: DELETE
+    path: /containers/${runTag}
+
+capabilities:
+  supportsChunks: true
+  supportsBatch: false
+  supportsMetadata: true
+  supportsRerank: true
+
+rateLimit:
+  addDelayMs: 100
+  searchDelayMs: 1000
+  batchDelayMs: 10000
+  maxRetries: 3
+  retryDelayMs: 2000
+

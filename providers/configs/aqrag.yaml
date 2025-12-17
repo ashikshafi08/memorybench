@@ -1,0 +1,46 @@
+name: aqrag
+displayName: "AQRAG"
+description: "Anticipatory Question RAG - generates questions for better retrieval"
+type: local
+tags:
+  - local
+  - experimental
+  - question-generation
+
+adapter: "./adapters/aqrag.ts"
+
+local:
+  database:
+    type: postgres
+    connectionString: "${DATABASE_URL}"
+    schema: "./providers/AQRAG/schema.sql"
+
+  chunking:
+    size: 1024
+    overlap: 96
+    strategy: fixed
+
+  embedding:
+    provider: google
+    model: "gemini-embedding-001"
+    dimensions: 1536
+
+  enhancement:
+    enabled: true
+    model: "claude-3-5-haiku"
+    generateQuestions: true
+    questionsPerChunk: 10
+
+  retrieval:
+    strategy: weighted
+    maxResults: 10
+    weights:
+      chunk: 0.5
+      questions: 0.5
+
+capabilities:
+  supportsChunks: true
+  supportsBatch: false
+  supportsMetadata: true
+  supportsRerank: false
+

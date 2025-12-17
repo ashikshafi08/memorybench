@@ -433,9 +433,10 @@ async function evaluateAll() {
                 if (!byQuestionType[ev.questionType]) {
                     byQuestionType[ev.questionType] = { correct: 0, total: 0 };
                 }
-                byQuestionType[ev.questionType].total++;
+                const stats = byQuestionType[ev.questionType]!;
+                stats.total++;
                 if (ev.label === 1) {
-                    byQuestionType[ev.questionType].correct++;
+                    stats.correct++;
                 }
             }
             
@@ -488,9 +489,10 @@ async function evaluateAll() {
         if (!byQuestionType[ev.questionType]) {
             byQuestionType[ev.questionType] = { correct: 0, total: 0 };
         }
-        byQuestionType[ev.questionType].total++;
+        const stats = byQuestionType[ev.questionType]!;
+        stats.total++;
         if (ev.label === 1) {
-            byQuestionType[ev.questionType].correct++;
+            stats.correct++;
         }
     }
     

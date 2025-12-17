@@ -1,0 +1,98 @@
+name: locomo
+displayName: "LoCoMo"
+description: "Long-form Conversation Memory benchmark"
+version: "1.0"
+source: "https://github.com/snap-research/locomo"
+paper: "https://arxiv.org/abs/2402.17753"
+tags:
+  - conversation
+  - memory
+  - multi-category
+
+data:
+  type: local
+  path: "./benchmarks/LoCoMo/locomo10.json"
+  format: json
+
+schema:
+  itemId: "sample_id"
+
+  questions:
+    field: "qa"
+    questionField: "question"
+    answerField: "answer"
+    evidenceField: "evidence"
+    categoryField: "category"
+
+  context:
+    field: "conversation"
+    type: object
+    sessionPattern: "session_*"
+    datePattern: "session_*_date_time"
+    itemSchema:
+      speaker: "$.speaker"
+      text: "$.text"
+      dialogId: "$.dia_id"
+
+  metadata:
+    speakerA: "speaker_a"
+    speakerB: "speaker_b"
+
+categories:
+  "1": "Factual Recall"
+  "2": "Temporal Reasoning"
+  "3": "Inference"
+
+ingestion:
+  mode: session-based
+  batchSize: 1
+  delayBetweenBatches: 5000
+  preprocessing:
+    formatTemplate: |
+      ${sessionDate}
+      ${session.map(turn => `${turn.speaker}: ${turn.text}`).join('\n')}
+
+search:
+  defaultLimit: 10
+  defaultThreshold: 0.3
+  includeChunks: true
+
+evaluation:
+  method: llm-judge
+
+  answeringModel:
+    model: "gpt-4o"
+    temperature: 0
+
+  answerPrompt:
+    default: |
+      Based on the conversation history, answer the question.
+      Question: ${question}
+      Context: ${retrievedContext}
+      Provide a concise answer based only on the context.
+    userOverride: true
+
+  judge:
+    model: "gpt-4o"
+    temperature: 0
+
+  judgePrompts:
+    source: "paper"
+    paperReference: "LoCoMo (arXiv:2402.17753) Section 4"
+    userOverride: true
+    default: |
+      Given the question and expected answer, evaluate if the response is correct.
+      Consider the evidence references when determining correctness.
+      Answer "yes" if correct, "no" otherwise.
+
+metrics:
+  - accuracy
+  - accuracy_by_category
+  - recall_at_5
+  - precision_at_5
+
+runtime:
+  checkpointing: true
+  checkpointGranularity: item
+  resumable: true
+

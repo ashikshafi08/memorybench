@@ -1,0 +1,50 @@
+name: rag-template
+displayName: "RAG Template Benchmark"
+description: "Simple template benchmark for testing RAG systems"
+version: "1.0"
+tags:
+  - template
+  - simple
+  - rag
+
+data:
+  type: local
+  path: "./benchmarks/RAG-template-benchmark/data.json"
+  format: json
+
+schema:
+  itemId: "id"
+  question: "question"
+  answer: "expected_answer"
+
+  context:
+    field: "documents"
+    type: array
+    itemSchema:
+      content: "$.content"
+
+  metadata:
+    difficulty: "metadata.difficulty"
+    category: "metadata.category"
+
+ingestion:
+  mode: bulk
+  batchSize: 10
+  delayBetweenBatches: 1000
+
+search:
+  defaultLimit: 5
+  defaultThreshold: 0.3
+  includeChunks: false
+
+evaluation:
+  method: exact-match
+
+metrics:
+  - accuracy
+
+runtime:
+  checkpointing: true
+  checkpointGranularity: item
+  resumable: true
+

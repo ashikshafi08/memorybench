@@ -3,10 +3,9 @@ import type { RAGBenchmarkItem } from "./RAG-template-benchmark/types";
 
 export interface BenchmarkRegistry {
   "RAG-template-benchmark": RAGBenchmarkItem;
-    "LoCoMo": LoCoMoBenchmarkItem;
-  // Future benchmarks can be added here
-  // 'QA': QABenchmarkItem;
-  // 'Summarization': SummarizationBenchmarkItem;
+  "LoCoMo": LoCoMoBenchmarkItem;
+  // Legacy alias for backwards compatibility
+  "RAG": RAGBenchmarkItem;
 }
 
 export type BenchmarkType = keyof BenchmarkRegistry;

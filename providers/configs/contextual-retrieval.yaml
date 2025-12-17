@@ -1,0 +1,42 @@
+name: contextual-retrieval
+displayName: "Contextual Retrieval"
+description: "Anthropic's contextual retrieval approach with document-level context"
+type: local
+tags:
+  - local
+  - experimental
+  - contextual
+
+adapter: "./adapters/contextual-retrieval.ts"
+
+local:
+  database:
+    type: postgres
+    connectionString: "${DATABASE_URL}"
+    schema: "./providers/ContextualRetrieval/schema.sql"
+
+  chunking:
+    size: 1024
+    overlap: 96
+    strategy: fixed
+
+  embedding:
+    provider: google
+    model: "gemini-embedding-001"
+    dimensions: 1536
+
+  enhancement:
+    enabled: true
+    model: "claude-3-5-haiku"
+    generateQuestions: false
+
+  retrieval:
+    strategy: simple
+    maxResults: 10
+
+capabilities:
+  supportsChunks: true
+  supportsBatch: false
+  supportsMetadata: true
+  supportsRerank: false
+

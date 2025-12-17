@@ -1,0 +1,57 @@
+name: mem0
+displayName: "Mem0"
+description: "Open source memory layer for AI"
+type: hosted
+tags:
+  - hosted
+  - open-source
+
+connection:
+  baseUrl: "${MEM0_API_URL:-https://api.mem0.ai/v1}"
+  timeout: 30000
+
+auth:
+  type: token
+  header: "Authorization"
+  prefix: "Token "
+  envVar: "MEM0_API_KEY"
+
+scoping:
+  strategy: userId
+  runIdFormat: "bench-${benchmarkId}-${runId}"
+
+endpoints:
+  add:
+    method: POST
+    path: /memories/
+    body:
+      messages:
+        - role: "user"
+          content: "$.content"
+      user_id: "$.userId"
+      metadata: "$.metadata"
+
+  search:
+    method: POST
+    path: /memories/search/
+    body:
+      query: "$.query"
+      user_id: "$.userId"
+      limit: 10
+    response:
+      results: "$.memories"
+      contentField: "$.memory"
+      scoreField: "$.score"
+
+  clear:
+    method: DELETE
+    path: /memories/
+    body:
+      user_id: "$.userId"
+
+capabilities:
+  supportsChunks: false
+  supportsBatch: true
+  supportsMetadata: true
+  supportsRerank: false
+
