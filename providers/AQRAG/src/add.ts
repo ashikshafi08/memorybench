@@ -34,7 +34,7 @@ const processChunk = async (chunk: string, document: Document) => {
 	);
 
 	const { object } = await generateObject({
-		model: anthropic("claude-3-5-haiku"),
+		model: anthropic("claude-haiku-4-5-20251001"),
 		prompt: enhancedChunkPrompt,
 		schema: z.object({
 			enhancedChunk: z.string(),
@@ -59,8 +59,8 @@ const processChunk = async (chunk: string, document: Document) => {
 	return object.enhancedChunk;
 };
 
-export const addDocument = async (document: string) => {
-	const dbDoc = await insertDocument(document);
+export const addDocument = async (document: string, runTag?: string) => {
+	const dbDoc = await insertDocument(document, runTag);
 
 	const chunks = chunkText(document);
 

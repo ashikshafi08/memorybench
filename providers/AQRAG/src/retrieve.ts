@@ -2,13 +2,14 @@ import { findSimilarWeighted } from "./db";
 import { QUESTION_WEIGHTAGE, SEARCH_RESULTS } from "./utils/config";
 import { generateEmbeddings } from "./utils/llm";
 
-export const retrieve = async (query: string) => {
+export const retrieve = async (query: string, runTag?: string) => {
 	const embeddings = await generateEmbeddings([query]);
 
 	if (
 		!embeddings ||
 		embeddings.length === 0 ||
-		typeof embeddings[0] !== "string"
+		!Array.isArray(embeddings[0]) ||
+		embeddings[0].length === 0
 	) {
 		throw new Error("Failed to generate embeddings");
 	}
@@ -17,6 +18,7 @@ export const retrieve = async (query: string) => {
 		embeddings[0],
 		QUESTION_WEIGHTAGE,
 		SEARCH_RESULTS,
+		runTag,
 	);
 
 	return similarChunks;

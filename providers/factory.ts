@@ -7,6 +7,7 @@ import type { Provider } from "./base/types.ts";
 import { HttpProvider } from "./base/http-provider.ts";
 import { AQRAGAdapter } from "./adapters/aqrag.ts";
 import { ContextualRetrievalAdapter } from "./adapters/contextual-retrieval.ts";
+import { OpenRouterRAGAdapter } from "./adapters/openrouter-rag.ts";
 
 /**
  * Registry of local provider adapters.
@@ -30,6 +31,7 @@ export function registerLocalAdapter(
 // Pre-register known local adapters
 registerLocalAdapter("./adapters/aqrag.ts", AQRAGAdapter);
 registerLocalAdapter("./adapters/contextual-retrieval.ts", ContextualRetrievalAdapter);
+registerLocalAdapter("./adapters/openrouter-rag.ts", OpenRouterRAGAdapter);
 
 /**
  * Create a provider instance from config.

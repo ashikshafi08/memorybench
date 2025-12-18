@@ -1,0 +1,37 @@
+name: openrouter-rag
+displayName: OpenRouter RAG
+description: Simple RAG system using OpenRouter for embeddings
+type: local
+tags:
+  - local
+  - simple
+  - openrouter
+  - embeddings
+
+adapter: "./adapters/openrouter-rag.ts"
+
+local:
+  database:
+    type: postgres
+    connectionString: "${DATABASE_URL}"
+    schema: "./providers/OpenRouterRAG/schema.sql"
+
+  chunking:
+    size: 512
+    overlap: 128
+    strategy: fixed
+
+  embedding:
+    provider: openrouter
+    model: "openai/text-embedding-3-small"
+    dimensions: 1536
+
+  retrieval:
+    strategy: simple
+    maxResults: 5
+
+capabilities:
+  supportsChunks: true
+  supportsBatch: false
+  supportsMetadata: true
+  supportsRerank: false
