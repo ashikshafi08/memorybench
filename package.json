@@ -23,7 +23,7 @@
     "@ai-sdk/google": "^2.0.14",
     "@ai-sdk/google-vertex": "^3.0.74",
     "@ai-sdk/openai": "^2.0.88",
-    "@openrouter/ai-sdk-provider": "^0.4.3",
+    "@openrouter/ai-sdk-provider": "^1.5.4",
     "ai": "^5.0.44",
     "dedent": "^1.7.0",
     "glob": "^13.0.0",

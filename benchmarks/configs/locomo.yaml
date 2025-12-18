@@ -35,13 +35,15 @@ schema:
       dialogId: "$.dia_id"
 
   metadata:
-    speakerA: "speaker_a"
-    speakerB: "speaker_b"
+    speakerA: "conversation.speaker_a"
+    speakerB: "conversation.speaker_b"
 
 categories:
-  "1": "Factual Recall"
+  "1": "Multi-hop"
   "2": "Temporal Reasoning"
-  "3": "Inference"
+  "3": "Open-domain"
+  "4": "Single-hop"
+  "5": "Adversarial"
 
 ingestion:
   mode: session-based
@@ -58,32 +60,28 @@ search:
   includeChunks: true
 
 evaluation:
-  method: llm-judge
+  method: custom
+  customEvaluator: locomo-qa
 
   answeringModel:
-    model: "gpt-4o"
+    model: "openrouter/openai/gpt-5-nano"
     temperature: 0
 
   answerPrompt:
     default: |
-      Based on the conversation history, answer the question.
-      Question: ${question}
-      Context: ${retrievedContext}
-      Provide a concise answer based only on the context.
-    userOverride: true
+      ${retrievedContext}
 
-  judge:
-    model: "gpt-4o"
-    temperature: 0
+      Based on the above context, write an answer in the form of a short phrase for the following question. Answer with exact words from the context whenever possible.
 
-  judgePrompts:
-    source: "paper"
-    paperReference: "LoCoMo (arXiv:2402.17753) Section 4"
+      Question: ${question} Short answer:
+    byQuestionType:
+      "5": |
+        ${retrievedContext}
+
+        Based on the above context, answer the following question.
+
+        Question: ${question} Short answer:
     userOverride: true
-    default: |
-      Given the question and expected answer, evaluate if the response is correct.
-      Consider the evidence references when determining correctness.
-      Answer "yes" if correct, "no" otherwise.
 
 metrics:
   - accuracy

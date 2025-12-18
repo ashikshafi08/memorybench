@@ -1,0 +1,76 @@
+{
+  "run": {
+    "id": "run-20251218-030855-8f4g",
+    "startedAt": "2025-12-18T03:08:55.528Z",
+    "completedAt": "2025-12-18T03:09:04.824Z",
+    "benchmarks": "[\"rag-template\"]",
+    "providers": "[\"aqrag\"]",
+    "config": "{\"totalBenchmarks\":1,\"totalProviders\":1,\"totalItems\":3,\"completedItems\":3,\"failedItems\":0,\"overallAccuracy\":1}"
+  },
+  "results": [
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "Paris is the capital and most populous city of France with a population of 2,102,650 residents (as of January 1, 2023). Located in an area exceeding 105 km², Paris ranks as the fourth-largest city in the European Union and the 30th most densely populated city globally as of 2022.\n\nFrance is a country primarily located in Western Europe, with significant geographical presence spanning multiple continents and ocean regions through its overseas territories and dependencies.\n\nChloroplasts are organe",
+      "score": 0.5,
+      "correct": true,
+      "retrievedContext": [],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 189.9501249999994,
+          "totalLatencyMs": 190.26833299999998,
+          "answerLatencyMs": 0.2150419999998121
+        }
+      }
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis is the process by which plants convert light energy, usually from the sun, into chemical energy stored in glucose. This process occurs in chloroplasts and involves two main stages: light-dependent reactions and the Calvin cycle.",
+      "actual": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. They absorb sunlight and convert it into chemical energy by utilizing water and carbon dioxide gas to synthesize glucose and other organic compounds that serve as food for the plant. This foundational cellular structure is essential for autotrophic life on Earth, enabling the conversion of solar energy into forms usable by plants and, indirectly, by all other organisms in the food chain.\n\nParis is ",
+      "score": 0.5,
+      "correct": true,
+      "retrievedContext": [],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 187.02645799999846,
+          "totalLatencyMs": 187.06320799999958,
+          "answerLatencyMs": 0.02679100000023027
+        }
+      }
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "question": "Explain the economic implications of quantum computing on current cryptographic systems.",
+      "expected": "Quantum computing poses significant economic risks to current cryptographic systems as it could break widely-used encryption methods like RSA and ECC, potentially compromising trillions of dollars in digital transactions, requiring massive investment in quantum-resistant cryptography, and creating new cybersecurity markets worth billions.",
+      "actual": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. They absorb sunlight and convert it into chemical energy by utilizing water and carbon dioxide gas to synthesize glucose and other organic compounds that serve as food for the plant. This foundational cellular structure is essential for autotrophic life on Earth, enabling the conversion of solar energy into forms usable by plants and, indirectly, by all other organisms in the food chain.\n\nFrance is",
+      "score": 0.5,
+      "correct": true,
+      "retrievedContext": [],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 159.64891700000044,
+          "totalLatencyMs": 159.68375000000015,
+          "answerLatencyMs": 0.022916999998415122
+        }
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "totalItems": 3,
+      "correctItems": 3,
+      "accuracy": 1,
+      "avgScore": 0.5
+    }
+  ]
+}

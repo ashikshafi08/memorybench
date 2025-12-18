@@ -1,0 +1,425 @@
+{
+  "run": {
+    "id": "run-20251218-035530-j3sa",
+    "startedAt": "2025-12-18T03:55:30.675Z",
+    "completedAt": "2025-12-18T03:55:46.405Z",
+    "benchmarks": "[\"rag-template\"]",
+    "providers": "[\"aqrag\",\"contextual-retrieval\",\"openrouter-rag\"]",
+    "config": "{\"totalBenchmarks\":1,\"totalProviders\":3,\"totalItems\":9,\"completedItems\":9,\"failedItems\":0,\"overallAccuracy\":0.3333333333333333}"
+  },
+  "results": [
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_001",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "The capital of France is Paris.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.6411926192170532,
+          "metadata": {}
+        },
+        {
+          "id": "31",
+          "content": "France is a country primarily located in Western Europe, with a complex geographic composition extending across multiple continents and ocean regions. The nation's territory includes its mainland European portion as well as numerous overseas regions and territories distributed throughout the Americas, Atlantic Ocean, Pacific Ocean, and Indian Ocean, reflecting its historical global presence and territorial reach.",
+          "score": 0.5452250168568596,
+          "metadata": {}
+        },
+        {
+          "id": "32",
+          "content": "Chloroplasts: Definition and Function - Chloroplasts are membrane-bound organelles present in plant cells and eukaryotic algae that serve as the site of photosynthesis. These organelles harness solar energy and combine it with water and carbon dioxide to synthesize organic food molecules for the plant's growth and energy needs.",
+          "score": 0.4164330750894991,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 165.7440000000006,
+          "totalLatencyMs": 1753.0542920000007,
+          "answerLatencyMs": 1587.2434580000008
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_002",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis is the process by which plants convert light energy, usually from the sun, into chemical energy stored in glucose. This process occurs in chloroplasts and involves two main stages: light-dependent reactions and the Calvin cycle.",
+      "actual": "Photosynthesis in plants occurs in chloroplasts, which are membrane-bound organelles. These organelles capture solar energy and use it to combine water and carbon dioxide, resulting in the synthesis of organic food molecules that provide growth and energy for the plant.",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "32",
+          "content": "Chloroplasts: Definition and Function - Chloroplasts are membrane-bound organelles present in plant cells and eukaryotic algae that serve as the site of photosynthesis. These organelles harness solar energy and combine it with water and carbon dioxide to synthesize organic food molecules for the plant's growth and energy needs.",
+          "score": 0.6244070925087296,
+          "metadata": {}
+        },
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.44626220405159855,
+          "metadata": {}
+        },
+        {
+          "id": "31",
+          "content": "France is a country primarily located in Western Europe, with a complex geographic composition extending across multiple continents and ocean regions. The nation's territory includes its mainland European portion as well as numerous overseas regions and territories distributed throughout the Americas, Atlantic Ocean, Pacific Ocean, and Indian Ocean, reflecting its historical global presence and territorial reach.",
+          "score": 0.42719391973243404,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 174.4227090000004,
+          "totalLatencyMs": 2510.36125,
+          "answerLatencyMs": 2335.806417
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_003",
+      "question": "Explain the economic implications of quantum computing on current cryptographic systems.",
+      "expected": "Quantum computing poses significant economic risks to current cryptographic systems as it could break widely-used encryption methods like RSA and ECC, potentially compromising trillions of dollars in digital transactions, requiring massive investment in quantum-resistant cryptography, and creating new cybersecurity markets worth billions.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "32",
+          "content": "Chloroplasts: Definition and Function - Chloroplasts are membrane-bound organelles present in plant cells and eukaryotic algae that serve as the site of photosynthesis. These organelles harness solar energy and combine it with water and carbon dioxide to synthesize organic food molecules for the plant's growth and energy needs.",
+          "score": 0.4346755589852651,
+          "metadata": {}
+        },
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.4316343064305954,
+          "metadata": {}
+        },
+        {
+          "id": "31",
+          "content": "France is a country primarily located in Western Europe, with a complex geographic composition extending across multiple continents and ocean regions. The nation's territory includes its mainland European portion as well as numerous overseas regions and territories distributed throughout the Americas, Atlantic Ocean, Pacific Ocean, and Indian Ocean, reflecting its historical global presence and territorial reach.",
+          "score": 0.4159323353842732,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 164.19204200000058,
+          "totalLatencyMs": 1576.8755419999998,
+          "answerLatencyMs": 1412.6533340000005
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_001",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "The capital of France is Paris.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.6866380300845658,
+          "metadata": {}
+        },
+        {
+          "id": "27",
+          "content": "Paris overview: France's capital and largest city with 2.1 million residents, covering 105+ km². Ranks fourth among EU cities and 30th globally by population density (2022 data).",
+          "score": 0.5989428230081276,
+          "metadata": {}
+        },
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.5957472083495403,
+          "metadata": {}
+        },
+        {
+          "id": "29",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans. This describes France's geographic location and territorial extent across multiple continents and ocean regions.",
+          "score": 0.5329487428327401,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.4120401062062343,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 171.28549999999996,
+          "totalLatencyMs": 1694.1391250000006,
+          "answerLatencyMs": 1522.8270000000002
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_002",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis is the process by which plants convert light energy, usually from the sun, into chemical energy stored in glucose. This process occurs in chloroplasts and involves two main stages: light-dependent reactions and the Calvin cycle.",
+      "actual": "Photosynthesis in plants works through chloroplasts, which are organelles that absorb sunlight. They use this sunlight along with water and carbon dioxide gas to produce food for the plant.",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.61922064423592,
+          "metadata": {}
+        },
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.45707551875923746,
+          "metadata": {}
+        },
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.43544888934395964,
+          "metadata": {}
+        },
+        {
+          "id": "31",
+          "content": "France is a country primarily located in Western Europe, with a complex geographic composition extending across multiple continents and ocean regions. The nation's territory includes its mainland European portion as well as numerous overseas regions and territories distributed throughout the Americas, Atlantic Ocean, Pacific Ocean, and Indian Ocean, reflecting its historical global presence and territorial reach.",
+          "score": 0.4302603057815869,
+          "metadata": {}
+        },
+        {
+          "id": "29",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans. This describes France's geographic location and territorial extent across multiple continents and ocean regions.",
+          "score": 0.4242755105240984,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 165.66983399999936,
+          "totalLatencyMs": 2524.067,
+          "answerLatencyMs": 2358.374917
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_003",
+      "question": "Explain the economic implications of quantum computing on current cryptographic systems.",
+      "expected": "Quantum computing poses significant economic risks to current cryptographic systems as it could break widely-used encryption methods like RSA and ECC, potentially compromising trillions of dollars in digital transactions, requiring massive investment in quantum-resistant cryptography, and creating new cybersecurity markets worth billions.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.4333990234462187,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.4321058151728242,
+          "metadata": {}
+        },
+        {
+          "id": "28",
+          "content": "This chunk provides foundational demographic and geographic information about Paris, establishing its political status as France's capital, its population metrics as of January 2023, and its comparative ranking within Europe and globally. This context is essential for understanding Paris's significance as a major European city.",
+          "score": 0.4298695894149721,
+          "metadata": {}
+        },
+        {
+          "id": "31",
+          "content": "France is a country primarily located in Western Europe, with a complex geographic composition extending across multiple continents and ocean regions. The nation's territory includes its mainland European portion as well as numerous overseas regions and territories distributed throughout the Americas, Atlantic Ocean, Pacific Ocean, and Indian Ocean, reflecting its historical global presence and territorial reach.",
+          "score": 0.42241495449022914,
+          "metadata": {}
+        },
+        {
+          "id": "29",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans. This describes France's geographic location and territorial extent across multiple continents and ocean regions.",
+          "score": 0.4168195357129266,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 155.0002089999998,
+          "totalLatencyMs": 1375.3729999999996,
+          "answerLatencyMs": 1220.3489580000005
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_001",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "The capital of France is Paris.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [
+        {
+          "id": "11",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": 0.11843098807483443,
+          "metadata": {}
+        },
+        {
+          "id": "12",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.05292131395500643,
+          "metadata": {}
+        },
+        {
+          "id": "13",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": -0.3967941687492791,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 321.13370799999984,
+          "totalLatencyMs": 1616.158833,
+          "answerLatencyMs": 1294.81925
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_002",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis is the process by which plants convert light energy, usually from the sun, into chemical energy stored in glucose. This process occurs in chloroplasts and involves two main stages: light-dependent reactions and the Calvin cycle.",
+      "actual": "Photosynthesis in plants works through chloroplasts, which are organelles that absorb sunlight. They use this sunlight along with water and carbon dioxide gas to produce food for the plant.",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "13",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": -0.059552986249468365,
+          "metadata": {}
+        },
+        {
+          "id": "12",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.3814935374569579,
+          "metadata": {}
+        },
+        {
+          "id": "11",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.4077218724080949,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 340.71537499999977,
+          "totalLatencyMs": 2494.703416,
+          "answerLatencyMs": 2153.963167
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035530-j3sa",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_003",
+      "question": "Explain the economic implications of quantum computing on current cryptographic systems.",
+      "expected": "Quantum computing poses significant economic risks to current cryptographic systems as it could break widely-used encryption methods like RSA and ECC, potentially compromising trillions of dollars in digital transactions, requiring massive investment in quantum-resistant cryptography, and creating new cybersecurity markets worth billions.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "11",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.3820233005706932,
+          "metadata": {}
+        },
+        {
+          "id": "12",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.4021698145200605,
+          "metadata": {}
+        },
+        {
+          "id": "13",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": -0.42096505025343545,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 483.32979199999954,
+          "totalLatencyMs": 1846.4808750000002,
+          "answerLatencyMs": 1363.1245420000005
+        }
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "totalItems": 3,
+      "correctItems": 1,
+      "accuracy": 0.3333333333333333,
+      "avgScore": 0.3333333333333333
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "totalItems": 3,
+      "correctItems": 1,
+      "accuracy": 0.3333333333333333,
+      "avgScore": 0.3333333333333333
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "totalItems": 3,
+      "correctItems": 1,
+      "accuracy": 0.3333333333333333,
+      "avgScore": 0.3333333333333333
+    }
+  ]
+}

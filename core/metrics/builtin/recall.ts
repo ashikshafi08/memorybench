@@ -5,18 +5,39 @@
 
 import type { EvalResult } from "../../config.ts";
 import type { MetricCalculator, MetricResult } from "../interface.ts";
+import { tokenize } from "./utils.ts";
 
 /**
  * Generic Recall@K metric calculator.
+ * 
+ * Determines relevance by checking how much of the expected answer's token set
+ * is covered by a retrieved chunk.
+ *
+ * Why not token-F1 against the entire chunk?
+ * Many memory providers return very large "chunks" (e.g., full conversation
+ * sessions). Token-F1 penalizes large chunks via very low precision, which can
+ * incorrectly drive Recall@K to 0 even when the expected answer clearly appears
+ * in the retrieved text. For Recall@K, what we care about is *coverage* of the
+ * expected answer tokens (i.e., recall), not how compact the retrieved chunk is.
+ * 
+ * This approach handles:
+ * - Minor wording differences ("Paris is capital of France" vs "Paris is the capital and most populous city of France")
+ * - Punctuation variations
+ * - Different phrasings that share key semantic tokens
+ * 
+ * @param k - Number of top results to consider
+ * @param f1Threshold - Minimum expected-token coverage to count as relevant (default: 0.3)
  */
 export class RecallAtKMetric implements MetricCalculator {
 	readonly name: string;
 	readonly aliases: readonly string[];
 	readonly description: string;
 	private readonly k: number;
+	private readonly f1Threshold: number;
 
-	constructor(k: number) {
+	constructor(k: number, f1Threshold = 0.3) {
 		this.k = k;
+		this.f1Threshold = f1Threshold;
 		this.name = `recall_at_${k}`;
 		this.aliases = [`recall@${k}`, `r@${k}`] as const;
 		this.description = `Recall at top ${k} retrieved results`;
@@ -28,24 +49,68 @@ export class RecallAtKMetric implements MetricCalculator {
 		}
 
 		let totalRecall = 0;
+		let relevantFound = 0;
+		let exactMatchFound = 0;
 
 		for (const result of results) {
 			const retrievedContext = result.retrievedContext.slice(0, this.k);
-			const expected = result.expected.toLowerCase();
+			const expectedTokens = tokenize(result.expected);
+			const expectedSet = new Set(expectedTokens);
 
-			// Check if any retrieved context contains the expected answer
-			const hasRelevant = retrievedContext.some((ctx) =>
-				ctx.content.toLowerCase().includes(expected),
-			);
+			// Check if any retrieved context sufficiently covers the expected answer tokens
+			let bestCoverage = 0;
+			let bestOverlap = 0;
+			let bestExpectedSize = expectedSet.size;
+
+			const hasRelevant = retrievedContext.some((ctx) => {
+				// Also check for exact match (for tracking)
+				const exactMatch = ctx.content.toLowerCase().includes(result.expected.toLowerCase());
+				if (exactMatch) exactMatchFound++;
+
+				if (expectedSet.size === 0) {
+					bestCoverage = 1;
+					bestOverlap = 0;
+					bestExpectedSize = 0;
+					return true;
+				}
+
+				const chunkTokens = tokenize(ctx.content);
+				const found = new Set<string>();
+				for (const t of chunkTokens) {
+					if (expectedSet.has(t)) {
+						found.add(t);
+						if (found.size === expectedSet.size) break;
+					}
+				}
+
+				const overlap = found.size;
+				const coverage = overlap / expectedSet.size; // recall of expected tokens
+
+				if (coverage > bestCoverage) {
+					bestCoverage = coverage;
+					bestOverlap = overlap;
+					bestExpectedSize = expectedSet.size;
+				}
+
+				return coverage >= this.f1Threshold;
+			});
 
 			if (hasRelevant) {
 				totalRecall++;
+				relevantFound++;
 			}
 		}
 
 		return {
 			name: this.name,
 			value: totalRecall / results.length,
+			details: {
+				relevantFound,
+				exactMatchFound,
+				total: results.length,
+				k: this.k,
+				f1Threshold: this.f1Threshold,
+			},
 		};
 	}
 }

@@ -14,6 +14,7 @@ import { MetricRegistry } from "./registry.ts";
 import { getBuiltinMetrics } from "./builtin/index.ts";
 import type { EvalResult } from "../config.ts";
 import type { MetricResult } from "./interface.ts";
+import { tokenize, computeF1FromPR } from "./builtin/utils.ts";
 
 // Global default registry instance
 let _defaultRegistry: MetricRegistry | null = null;
@@ -112,15 +113,26 @@ export function calculateRecallAtK(
 	const metricName = `recall_at_${k}`;
 	// For non-standard K values, fall back to computing manually
 	if (!getDefaultRegistry().has(metricName)) {
-		// This is a simplified fallback - the full implementation is in RecallAtKMetric
+		// Fallback implementation using token-based F1 scoring
 		if (results.length === 0) return 0;
+		const f1Threshold = 0.3;
 		let totalRecall = 0;
 		for (const result of results) {
 			const retrievedContext = result.retrievedContext.slice(0, k);
-			const expected = result.expected.toLowerCase();
-			const hasRelevant = retrievedContext.some((ctx) =>
-				ctx.content.toLowerCase().includes(expected),
-			);
+			const expectedTokens = tokenize(result.expected);
+			const hasRelevant = retrievedContext.some((ctx) => {
+				const chunkTokens = tokenize(ctx.content);
+				const expectedSet = new Set(expectedTokens);
+				const chunkSet = new Set(chunkTokens);
+				let overlap = 0;
+				for (const token of expectedSet) {
+					if (chunkSet.has(token)) overlap++;
+				}
+				const precision = chunkSet.size > 0 ? overlap / chunkSet.size : 0;
+				const recall = expectedSet.size > 0 ? overlap / expectedSet.size : 0;
+				const f1 = computeF1FromPR(precision, recall);
+				return f1 >= f1Threshold;
+			});
 			if (hasRelevant) totalRecall++;
 		}
 		return totalRecall / results.length;
@@ -140,14 +152,25 @@ export function calculatePrecisionAtK(
 	// For non-standard K values, fall back to computing manually
 	if (!getDefaultRegistry().has(metricName)) {
 		if (results.length === 0) return 0;
+		const f1Threshold = 0.3;
 		let totalPrecision = 0;
 		for (const result of results) {
 			const retrievedContext = result.retrievedContext.slice(0, k);
-			const expected = result.expected.toLowerCase();
+			const expectedTokens = tokenize(result.expected);
 			if (retrievedContext.length === 0) continue;
-			const relevantCount = retrievedContext.filter((ctx) =>
-				ctx.content.toLowerCase().includes(expected),
-			).length;
+			const relevantCount = retrievedContext.filter((ctx) => {
+				const chunkTokens = tokenize(ctx.content);
+				const expectedSet = new Set(expectedTokens);
+				const chunkSet = new Set(chunkTokens);
+				let overlap = 0;
+				for (const token of expectedSet) {
+					if (chunkSet.has(token)) overlap++;
+				}
+				const precision = chunkSet.size > 0 ? overlap / chunkSet.size : 0;
+				const recall = expectedSet.size > 0 ? overlap / expectedSet.size : 0;
+				const f1 = computeF1FromPR(precision, recall);
+				return f1 >= f1Threshold;
+			}).length;
 			totalPrecision += relevantCount / retrievedContext.length;
 		}
 		return totalPrecision / results.length;

@@ -275,6 +275,9 @@ export class CheckpointManager {
 			checkpoint.provider,
 		);
 
+		// Ensure directory exists before writing
+		await mkdir(dirname(path), { recursive: true });
+
 		// Write to temp file first, then rename (atomic)
 		const tempPath = `${path}.tmp`;
 		await Bun.write(tempPath, JSON.stringify(checkpoint, null, 2));

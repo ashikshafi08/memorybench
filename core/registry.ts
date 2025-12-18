@@ -19,8 +19,22 @@ import {
 export function interpolateEnvVars(value: string): string {
 	return value.replace(
 		/\$\{(\w+)(?::-([^}]*))?\}/g,
-		(_, name: string, defaultValue?: string) => {
-			return process.env[name] || defaultValue || "";
+		(match: string, name: string, defaultValue?: string) => {
+			// If the env var is set (and non-empty), substitute it
+			const envVal = process.env[name];
+			if (envVal !== undefined && envVal !== "") {
+				return envVal;
+			}
+
+			// If a default is provided (${VAR:-default}), use it
+			if (defaultValue !== undefined) {
+				return defaultValue;
+			}
+
+			// Otherwise preserve the placeholder (important for benchmark prompt templates
+			// like ${question}, ${retrievedContext}, and runtime placeholders like
+			// ${benchmarkId}-${runId}).
+			return match;
 		},
 	);
 }

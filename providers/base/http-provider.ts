@@ -328,6 +328,7 @@ export class HttpProvider extends BaseProvider {
 		},
 	): SearchResult[] {
 		if (!response || !responseConfig) {
+			console.warn(`[${this.name}] mapSearchResponse: No response or config provided`);
 			return [];
 		}
 
@@ -339,6 +340,15 @@ export class HttpProvider extends BaseProvider {
 		});
 
 		if (!Array.isArray(results)) {
+			console.warn(
+				`[${this.name}] mapSearchResponse: Results path "${responseConfig.results}" did not return an array. ` +
+				`Got: ${typeof results}. Response keys: ${Object.keys(response as object).join(", ")}`
+			);
+			return [];
+		}
+
+		if (results.length === 0) {
+			console.warn(`[${this.name}] mapSearchResponse: Empty results array returned`);
 			return [];
 		}
 
@@ -353,6 +363,14 @@ export class HttpProvider extends BaseProvider {
 						wrap: false,
 					})
 				: itemObj.content ?? itemObj.text ?? "";
+
+			// Warn if content extraction failed (only on first item to avoid spam)
+			if (index === 0 && (!content || content === "")) {
+				console.warn(
+					`[${this.name}] mapSearchResponse: Content extraction failed for path "${responseConfig.contentField}". ` +
+					`Item keys: ${Object.keys(itemObj).join(", ")}`
+				);
+			}
 
 			// Extract score
 			const score = responseConfig.scoreField

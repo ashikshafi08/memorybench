@@ -211,17 +211,26 @@ function mapNestedQuestions(
 		const question = String(q[questionsConfig.questionField] ?? "");
 		const answer = String(q[questionsConfig.answerField] ?? "");
 		const category = q[questionsConfig.categoryField ?? "category"];
+		const categoryId =
+			category !== undefined && category !== null && category !== ""
+				? Number(category)
+				: undefined;
 
 		// Map category number to name if available
 		let categoryName: string | undefined;
-		if (config.categories && category !== undefined) {
-			categoryName = (config.categories as Record<string, string>)[String(category)];
+		if (config.categories && categoryId !== undefined && !Number.isNaN(categoryId)) {
+			categoryName = (config.categories as Record<string, string>)[String(categoryId)];
 		}
 
 		const metadata: Record<string, unknown> = {
 			...sharedMetadata,
 			questionIndex: i,
-			category: categoryName ?? category,
+			// For display/breakdowns, keep the human-readable name when available.
+			category: categoryName ?? (categoryId !== undefined ? String(categoryId) : "unknown"),
+			// Preserve the numeric category id for benchmark-specific evaluators (e.g. LoCoMo).
+			categoryId: categoryId !== undefined && !Number.isNaN(categoryId) ? categoryId : undefined,
+			// Treat LoCoMo category id as questionType so prompts can be overridden via byQuestionType.
+			questionType: categoryId !== undefined && !Number.isNaN(categoryId) ? String(categoryId) : undefined,
 		};
 
 		// Include evidence if available
@@ -235,6 +244,7 @@ function mapNestedQuestions(
 			answer,
 			contexts,
 			metadata,
+			questionType: metadata.questionType as string | undefined,
 			category: categoryName,
 		});
 	}

@@ -4,7 +4,7 @@
  * ⚠️ RETRIEVAL BENCHMARKS ONLY - NOT RECOMMENDED FOR MEMORY BENCHMARKS ⚠️
  *
  * MRR measures the average of 1/rank for the first relevant result,
- * where relevance is determined by exact substring matching.
+ * where relevance is determined by token-based F1 scoring (not exact matching).
  *
  * Why MRR is NOT suitable for memory benchmarks:
  *   - MRR assumes a single correct item exists
@@ -32,6 +32,7 @@
 
 import type { EvalResult } from "../../config.ts";
 import type { MetricCalculator, MetricResult } from "../interface.ts";
+import { tokenize, computeF1FromPR } from "./utils.ts";
 
 /**
  * Mean Reciprocal Rank (MRR) metric.
@@ -43,6 +44,11 @@ export class MRRMetric implements MetricCalculator {
 	readonly aliases = ["mean_reciprocal_rank"] as const;
 	readonly description =
 		"Mean Reciprocal Rank (retrieval benchmarks only) - average of 1/rank for first relevant result";
+	private readonly f1Threshold: number;
+
+	constructor(f1Threshold = 0.3) {
+		this.f1Threshold = f1Threshold;
+	}
 
 	compute(results: EvalResult[]): MetricResult {
 		if (results.length === 0) {
@@ -50,24 +56,46 @@ export class MRRMetric implements MetricCalculator {
 		}
 
 		let totalRR = 0;
+		let foundCount = 0;
 
 		for (const result of results) {
-			const expected = result.expected.toLowerCase();
+			const expectedTokens = tokenize(result.expected);
 
-			// Find rank of first relevant result (0-indexed)
-			const rank = result.retrievedContext.findIndex((ctx) =>
-				ctx.content.toLowerCase().includes(expected),
-			);
+			// Find rank of first relevant result (0-indexed) using token-based F1
+			const rank = result.retrievedContext.findIndex((ctx) => {
+				const chunkTokens = tokenize(ctx.content);
+				const expectedSet = new Set(expectedTokens);
+				const chunkSet = new Set(chunkTokens);
+
+				// Compute token overlap
+				let overlap = 0;
+				for (const token of expectedSet) {
+					if (chunkSet.has(token)) overlap++;
+				}
+
+				// Calculate F1 score for this chunk
+				const precision = chunkSet.size > 0 ? overlap / chunkSet.size : 0;
+				const recall = expectedSet.size > 0 ? overlap / expectedSet.size : 0;
+				const f1 = computeF1FromPR(precision, recall);
+
+				return f1 >= this.f1Threshold;
+			});
 
 			if (rank !== -1) {
 				// rank is 0-indexed, so add 1 for reciprocal
 				totalRR += 1 / (rank + 1);
+				foundCount++;
 			}
 		}
 
 		return {
 			name: this.name,
 			value: totalRR / results.length,
+			details: {
+				foundCount,
+				total: results.length,
+				f1Threshold: this.f1Threshold,
+			},
 		};
 	}
 }

@@ -31,20 +31,22 @@ endpoints:
     method: POST
     path: /search
     body:
-      query: "$.query"
+      q: "$.query"
       containerTags: ["$.runTag"]
       limit: 10
       threshold: 0.3
       includeChunks: true
     response:
       results: "$.results"
-      contentField: "$.memory"
+      contentField: "$.chunks[0].content"
       scoreField: "$.score"
       chunksField: "$.chunks"
 
   clear:
     method: DELETE
-    path: /containers/${runTag}
+    path: /documents/bulk
+    body:
+      containerTags: ["$.runTag"]
 
 capabilities:
   supportsChunks: true

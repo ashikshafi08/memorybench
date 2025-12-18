@@ -1,0 +1,76 @@
+{
+  "run": {
+    "id": "run-20251218-034137-ioky",
+    "startedAt": "2025-12-18T03:41:37.221Z",
+    "completedAt": "2025-12-18T03:41:54.339Z",
+    "benchmarks": "[\"rag-template\"]",
+    "providers": "[\"aqrag\"]",
+    "config": "{\"totalBenchmarks\":1,\"totalProviders\":1,\"totalItems\":3,\"completedItems\":3,\"failedItems\":0,\"overallAccuracy\":0.3333333333333333}"
+  },
+  "results": [
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "The capital of France is Paris.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 190.6422500000008,
+          "totalLatencyMs": 2357.5497910000013,
+          "answerLatencyMs": 2166.8020000000015
+        }
+      }
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis is the process by which plants convert light energy, usually from the sun, into chemical energy stored in glucose. This process occurs in chloroplasts and involves two main stages: light-dependent reactions and the Calvin cycle.",
+      "actual": "Photosynthesis in plants works through chloroplasts, which are organelles that absorb sunlight. They use this sunlight along with water and carbon dioxide gas to produce food for the plant.",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 258.70074999999997,
+          "totalLatencyMs": 3642.6528749999998,
+          "answerLatencyMs": 3383.927667
+        }
+      }
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "question": "Explain the economic implications of quantum computing on current cryptographic systems.",
+      "expected": "Quantum computing poses significant economic risks to current cryptographic systems as it could break widely-used encryption methods like RSA and ECC, potentially compromising trillions of dollars in digital transactions, requiring massive investment in quantum-resistant cryptography, and creating new cybersecurity markets worth billions.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 166.36879099999896,
+          "totalLatencyMs": 1871.5704579999983,
+          "answerLatencyMs": 1705.1807499999977
+        }
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "totalItems": 3,
+      "correctItems": 1,
+      "accuracy": 0.3333333333333333,
+      "avgScore": 0.3333333333333333
+    }
+  ]
+}

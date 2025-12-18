@@ -1,11 +1,18 @@
 import { sql } from "bun";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Chunk, Document, WeightedSearchResult } from "./types";
+
+// Get the directory of this module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize database by creating tables
 export async function initDatabase() {
 	try {
-		// Read and execute schema
-		const schemaFile = Bun.file("./schema.sql");
+		// Read and execute schema - path relative to this module
+		const schemaPath = join(__dirname, "../schema.sql");
+		const schemaFile = Bun.file(schemaPath);
 		const schema = await schemaFile.text();
 
 		// Split by statements and execute each one
@@ -98,41 +105,8 @@ export async function findSimilarWeighted(
 	// Ensure chunkWeight is between 0 and 1
 	const clampedWeight = Math.max(0, Math.min(1, chunkWeight));
 
-	// If runTag is provided, filter by it
-	if (runTag) {
-		return await sql`
-      WITH chunk_similarities AS (
-        SELECT
-          c.id,
-          c.content,
-          e.embedding <-> ${JSON.stringify(embedding)}::vector as chunk_distance,
-          ${clampedWeight} as chunk_weight
-        FROM chunks c
-        JOIN documents d ON c.document_id = d.id
-        JOIN embeddings e ON c.id = e.chunk_id AND e.is_question_embedding = false
-        WHERE d.run_tag = ${runTag}
-      ),
-      question_similarities AS (
-        SELECT
-          c.id,
-          e.embedding <-> ${JSON.stringify(embedding)}::vector as question_distance,
-          ${questionWeight} as question_weight
-        FROM chunks c
-        JOIN documents d ON c.document_id = d.id
-        JOIN embeddings e ON c.id = e.chunk_id AND e.is_question_embedding = true
-        WHERE d.run_tag = ${runTag}
-      )
-      SELECT
-        cs.*,
-        qs.question_distance,
-        (cs.chunk_distance * cs.chunk_weight + qs.question_distance * qs.question_weight) as weighted_distance,
-        (1 - (cs.chunk_distance * cs.chunk_weight + qs.question_distance * qs.question_weight)) as similarity_score
-      FROM chunk_similarities cs
-      JOIN question_similarities qs ON cs.id = qs.id
-      ORDER BY weighted_distance ASC
-      LIMIT ${limit}
-    `;
-	}
+	// Build WHERE clause for runTag filtering
+	const runTagFilter = runTag ? sql`AND d.run_tag = ${runTag}` : sql``;
 
 	return await sql`
     WITH chunk_similarities AS (
@@ -143,6 +117,8 @@ export async function findSimilarWeighted(
         ${clampedWeight} as chunk_weight
       FROM chunks c
       JOIN embeddings e ON c.id = e.chunk_id AND e.is_question_embedding = false
+      JOIN documents d ON c.document_id = d.id
+      WHERE 1=1 ${runTagFilter}
     ),
     question_similarities AS (
       SELECT
@@ -151,6 +127,8 @@ export async function findSimilarWeighted(
         ${questionWeight} as question_weight
       FROM chunks c
       JOIN embeddings e ON c.id = e.chunk_id AND e.is_question_embedding = true
+      JOIN documents d ON c.document_id = d.id
+      WHERE 1=1 ${runTagFilter}
     )
     SELECT
       cs.*,

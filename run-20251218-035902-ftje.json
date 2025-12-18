@@ -1,0 +1,1328 @@
+{
+  "run": {
+    "id": "run-20251218-035902-ftje",
+    "startedAt": "2025-12-18T03:59:02.553Z",
+    "completedAt": "2025-12-18T03:59:28.496Z",
+    "benchmarks": "[\"rag-template\"]",
+    "providers": "[\"aqrag\",\"contextual-retrieval\",\"openrouter-rag\"]",
+    "config": "{\"totalBenchmarks\":1,\"totalProviders\":3,\"totalItems\":30,\"completedItems\":30,\"failedItems\":0,\"overallAccuracy\":0.13333333333333333}"
+  },
+  "results": [
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_001",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "The capital of France is Paris.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.641030564057577,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.5464758128781035,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.42168665433841657,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 158.24391699999978,
+          "totalLatencyMs": 1330.694125,
+          "answerLatencyMs": 1172.426166000001
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_002",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis converts light energy into chemical energy stored in glucose. It occurs in chloroplasts and involves two stages: light-dependent reactions in thylakoid membranes, and the Calvin cycle in the stroma.",
+      "actual": "Photosynthesis in plants occurs in chloroplasts, which are the photosynthetic organelles. During this process, light energy from sunlight is absorbed and converted into chemical energy in the form of glucose. The raw materials used in photosynthesis are water and carbon dioxide, which are utilized to produce glucose, serving as an energy source for the plant's growth and metabolism.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.6386565829196365,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.44907188515455365,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.4257747630516714,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 185.75187499999993,
+          "totalLatencyMs": 3211.5351250000003,
+          "answerLatencyMs": 3025.7590419999997
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_003",
+      "question": "What are the economic risks of quantum computing to cryptography?",
+      "expected": "Quantum computing threatens RSA and ECC encryption using Shor's algorithm. This could compromise trillions in digital transactions and require hundreds of billions in infrastructure upgrades to quantum-resistant cryptography.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.434221890544088,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.41953152268033045,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.40577696466005675,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 155.39650000000074,
+          "totalLatencyMs": 1677.8889999999992,
+          "answerLatencyMs": 1522.4722919999986
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_004",
+      "question": "What is the difference between machine learning and deep learning?",
+      "expected": "Machine learning uses algorithms to learn patterns from data. Deep learning is a subset using neural networks with multiple layers. Deep learning requires more data and compute but can learn complex patterns automatically without manual feature engineering.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4344182607485517,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4311297203535496,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.42143340953307196,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 188.5924589999995,
+          "totalLatencyMs": 1567.3074590000015,
+          "answerLatencyMs": 1378.692167000001
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_005",
+      "question": "How does the human immune system fight viral infections?",
+      "expected": "The immune system uses innate responses (inflammation, fever, interferons) and adaptive responses (T-cells killing infected cells, B-cells producing antibodies). Memory cells provide long-term immunity for future infections.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.45129905824586813,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.43164420791069835,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.4097427484174996,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 153.07287500000166,
+          "totalLatencyMs": 1758.0247920000002,
+          "answerLatencyMs": 1604.935125
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_006",
+      "question": "What caused the 2008 financial crisis?",
+      "expected": "The 2008 crisis was caused by subprime mortgage lending, housing bubble collapse, complex mortgage-backed securities (MBS) and CDOs, inadequate risk assessment by rating agencies, and excessive leverage by financial institutions.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.42875267823703145,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4272995601617705,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.41997048000921344,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 144.74599999999919,
+          "totalLatencyMs": 1416.0347079999992,
+          "answerLatencyMs": 1271.273000000001
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_007",
+      "question": "How do vaccines work?",
+      "expected": "Vaccines introduce weakened, inactivated, or partial pathogens (or mRNA instructions) to train the immune system. This triggers antibody production and memory cell creation without causing disease, providing immunity against future infection.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4684916327797167,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.42483303454386,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.4048441332625372,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 168.10141600000134,
+          "totalLatencyMs": 1731.637333999999,
+          "answerLatencyMs": 1563.5106250000026
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_008",
+      "question": "What is the greenhouse effect and how does it relate to climate change?",
+      "expected": "The greenhouse effect is when atmospheric gases (CO2, methane, water vapor) trap heat from the sun, warming Earth. Human activities increase these gases, enhancing the effect and causing global warming and climate change.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.5238904501672886,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.47541428290191345,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.44469520468758583,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 154.4510420000006,
+          "totalLatencyMs": 1301.9005829999987,
+          "answerLatencyMs": 1147.4300000000003
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_009",
+      "question": "How does blockchain technology work?",
+      "expected": "Blockchain is a distributed ledger where transactions are grouped into blocks, cryptographically linked in a chain. Consensus mechanisms (like proof-of-work) validate transactions across nodes without central authority, making it tamper-resistant.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4620989621847985,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4499057754361244,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.42657505743753144,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 270.2940839999974,
+          "totalLatencyMs": 1501.8796249999978,
+          "answerLatencyMs": 1231.564957999999
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "itemId": "rag_010",
+      "question": "What is CRISPR and how is it used in gene editing?",
+      "expected": "CRISPR-Cas9 is a gene editing tool derived from bacterial immune systems. Guide RNA directs the Cas9 protein to specific DNA sequences, which it cuts. The cell's repair mechanisms then modify the gene, enabling precise genetic changes.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.47228837120950484,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4627019469818021,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.42639410391822774,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 161.11637500000143,
+          "totalLatencyMs": 1591.8539579999997,
+          "answerLatencyMs": 1430.7187919999997
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_001",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "The capital of France is Paris.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.6720893969928827,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.6099717311222712,
+          "metadata": {}
+        },
+        {
+          "id": "27",
+          "content": "Paris overview: France's capital and largest city with 2.1 million residents, covering 105+ km². Ranks fourth among EU cities and 30th globally by population density (2022 data).",
+          "score": 0.5989428230081276,
+          "metadata": {}
+        },
+        {
+          "id": "33",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022. [Opening statement providing key demographic and geographic facts about Paris]",
+          "score": 0.5988339559204354,
+          "metadata": {}
+        },
+        {
+          "id": "29",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans. This describes France's geographic location and territorial extent across multiple continents and ocean regions.",
+          "score": 0.5329487428327401,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 212.78895899999952,
+          "totalLatencyMs": 1728.2008749999995,
+          "answerLatencyMs": 1515.3859160000002
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_002",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis converts light energy into chemical energy stored in glucose. It occurs in chloroplasts and involves two stages: light-dependent reactions in thylakoid membranes, and the Calvin cycle in the stroma.",
+      "actual": "Photosynthesis in plants works through chloroplasts, which are organelles that absorb sunlight. They use this sunlight along with water and carbon dioxide to produce glucose, which serves as food for the plant. This process is essential for the plant's energy production and survival.",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.61922064423592,
+          "metadata": {}
+        },
+        {
+          "id": "36",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant. These structures are essential for plant energy production and survival.",
+          "score": 0.6164224445475133,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.45636003116735746,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.44178373914174973,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.4296849133275831,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 164.5284590000001,
+          "totalLatencyMs": 3144.3622079999996,
+          "answerLatencyMs": 2979.808333
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_003",
+      "question": "What are the economic risks of quantum computing to cryptography?",
+      "expected": "Quantum computing threatens RSA and ECC encryption using Shor's algorithm. This could compromise trillions in digital transactions and require hundreds of billions in infrastructure upgrades to quantum-resistant cryptography.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4444669800931563,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4269790166399571,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.42397680099501966,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.41700652633740776,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4120840287207037,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 151.43812499999876,
+          "totalLatencyMs": 1430.7938749999994,
+          "answerLatencyMs": 1279.3035
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_004",
+      "question": "What is the difference between machine learning and deep learning?",
+      "expected": "Machine learning uses algorithms to learn patterns from data. Deep learning is a subset using neural networks with multiple layers. Deep learning requires more data and compute but can learn complex patterns automatically without manual feature engineering.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4407602058015174,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.438609634908681,
+          "metadata": {}
+        },
+        {
+          "id": "37",
+          "content": "France is a country primarily located in Western Europe, with additional overseas territories and regions distributed across multiple continents and oceans. These overseas possessions extend France's geographic presence to the Americas, the Atlantic, Pacific, and Indian Oceans.",
+          "score": 0.4282517412059561,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.428076315695586,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.4239169431705735,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 165.85241600000154,
+          "totalLatencyMs": 1850.696249999999,
+          "answerLatencyMs": 1684.8155000000006
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_005",
+      "question": "How does the human immune system fight viral infections?",
+      "expected": "The immune system uses innate responses (inflammation, fever, interferons) and adaptive responses (T-cells killing infected cells, B-cells producing antibodies). Memory cells provide long-term immunity for future infections.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.45888074084053754,
+          "metadata": {}
+        },
+        {
+          "id": "36",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant. These structures are essential for plant energy production and survival.",
+          "score": 0.44502126253321905,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.44371737565119873,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.44360244436396457,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.43788212934370296,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 161.64133299999958,
+          "totalLatencyMs": 1421.55825,
+          "answerLatencyMs": 1259.8775839999998
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_006",
+      "question": "What caused the 2008 financial crisis?",
+      "expected": "The 2008 crisis was caused by subprime mortgage lending, housing bubble collapse, complex mortgage-backed securities (MBS) and CDOs, inadequate risk assessment by rating agencies, and excessive leverage by financial institutions.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4353030246417061,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4340122848452177,
+          "metadata": {}
+        },
+        {
+          "id": "35",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans. This describes France's geographic distribution as both a European nation and a global power with overseas territories across multiple continents and ocean regions.",
+          "score": 0.42225164362019985,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4222023318323569,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4205868354783233,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 188.04345799999828,
+          "totalLatencyMs": 2406.9408329999987,
+          "answerLatencyMs": 2218.8679169999996
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_007",
+      "question": "How do vaccines work?",
+      "expected": "Vaccines introduce weakened, inactivated, or partial pathogens (or mRNA instructions) to train the immune system. This triggers antibody production and memory cell creation without causing disease, providing immunity against future infection.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.47570733990783953,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4612759256515939,
+          "metadata": {}
+        },
+        {
+          "id": "36",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant. These structures are essential for plant energy production and survival.",
+          "score": 0.4605430719176813,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.4563191096059368,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4320521058103569,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 217.22300000000178,
+          "totalLatencyMs": 1780.5680840000023,
+          "answerLatencyMs": 1563.325417
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_008",
+      "question": "What is the greenhouse effect and how does it relate to climate change?",
+      "expected": "The greenhouse effect is when atmospheric gases (CO2, methane, water vapor) trap heat from the sun, warming Earth. Human activities increase these gases, enhancing the effect and causing global warming and climate change.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.5374925807310769,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.5102883196035004,
+          "metadata": {}
+        },
+        {
+          "id": "36",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant. These structures are essential for plant energy production and survival.",
+          "score": 0.502818301826344,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.5017295890257291,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4873833998294176,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 150.24024999999892,
+          "totalLatencyMs": 1376.7729590000017,
+          "answerLatencyMs": 1226.5135409999966
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_009",
+      "question": "How does blockchain technology work?",
+      "expected": "Blockchain is a distributed ledger where transactions are grouped into blocks, cryptographically linked in a chain. Consensus mechanisms (like proof-of-work) validate transactions across nodes without central authority, making it tamper-resistant.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4649363688403023,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.4612659681080036,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4592615555292947,
+          "metadata": {}
+        },
+        {
+          "id": "36",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant. These structures are essential for plant energy production and survival.",
+          "score": 0.45560940625772295,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4516595583992852,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 170.56570799999827,
+          "totalLatencyMs": 2117.295624999999,
+          "answerLatencyMs": 1946.7071250000008
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "itemId": "rag_010",
+      "question": "What is CRISPR and how is it used in gene editing?",
+      "expected": "CRISPR-Cas9 is a gene editing tool derived from bacterial immune systems. Guide RNA directs the Cas9 protein to specific DNA sequences, which it cuts. The cell's repair mechanisms then modify the gene, enabling precise genetic changes.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4822704608637103,
+          "metadata": {}
+        },
+        {
+          "id": "30",
+          "content": "Chloroplasts are organelles found in plant cells and eukaryotic algae that conduct photosynthesis. Chloroplasts absorb sunlight and use it in conjunction with water and carbon dioxide gas to produce food for the plant.",
+          "score": 0.4646216804541399,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.46338037798235543,
+          "metadata": {}
+        },
+        {
+          "id": "38",
+          "content": "Chloroplasts are the photosynthetic organelles in plant cells, where light energy from sunlight is converted into chemical energy in the form of glucose. This process involves the absorption of sunlight and the utilization of water and carbon dioxide as raw materials to produce glucose that serves as an energy source for the plant's growth and metabolism.",
+          "score": 0.4623062815552994,
+          "metadata": {}
+        },
+        {
+          "id": "34",
+          "content": "This chunk provides foundational demographic and geographical information about Paris as France's capital city, including its official population count as of early 2023, land area, and comparative rankings among European and global cities by size and population density.",
+          "score": 0.4620235159812487,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 160.4809580000001,
+          "totalLatencyMs": 1771.0224159999998,
+          "answerLatencyMs": 1610.5065410000025
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_001",
+      "question": "What is the capital of France?",
+      "expected": "Paris is the capital of France.",
+      "actual": "The capital of France is Paris.",
+      "score": 1,
+      "correct": true,
+      "retrievedContext": [
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": 0.11842767509301844,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.05372242041863551,
+          "metadata": {}
+        },
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.37452420759201965,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 286.5312909999998,
+          "totalLatencyMs": 1634.7112920000004,
+          "answerLatencyMs": 1347.916875
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_002",
+      "question": "How does photosynthesis work in plants?",
+      "expected": "Photosynthesis converts light energy into chemical energy stored in glucose. It occurs in chloroplasts and involves two stages: light-dependent reactions in thylakoid membranes, and the Calvin cycle in the stroma.",
+      "actual": "Photosynthesis in plants works through chloroplasts, which are organelles that absorb sunlight. They use this sunlight along with water and carbon dioxide to produce glucose for the plant.",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": 0.008980665262720455,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.38125104084234596,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.40775201902547886,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 461.86912500000017,
+          "totalLatencyMs": 2947.45575,
+          "answerLatencyMs": 2485.56625
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_003",
+      "question": "What are the economic risks of quantum computing to cryptography?",
+      "expected": "Quantum computing threatens RSA and ECC encryption using Shor's algorithm. This could compromise trillions in digital transactions and require hundreds of billions in infrastructure upgrades to quantum-resistant cryptography.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.39786355798447937,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.4224532911144119,
+          "metadata": {}
+        },
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.45604109677803795,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 592.9727920000005,
+          "totalLatencyMs": 2097.093541,
+          "answerLatencyMs": 1504.099542
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_004",
+      "question": "What is the difference between machine learning and deep learning?",
+      "expected": "Machine learning uses algorithms to learn patterns from data. Deep learning is a subset using neural networks with multiple layers. Deep learning requires more data and compute but can learn complex patterns automatically without manual feature engineering.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.38566777336645974,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.39547582099822187,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.41648295090174403,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 768.9848750000001,
+          "totalLatencyMs": 1975.474583000001,
+          "answerLatencyMs": 1206.4510840000003
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_005",
+      "question": "How does the human immune system fight viral infections?",
+      "expected": "The immune system uses innate responses (inflammation, fever, interferons) and adaptive responses (T-cells killing infected cells, B-cells producing antibodies). Memory cells provide long-term immunity for future infections.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.38096115406268805,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.41359648217571476,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.42298041331683467,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 211.64075000000048,
+          "totalLatencyMs": 1792.802416999999,
+          "answerLatencyMs": 1581.1122500000001
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_006",
+      "question": "What caused the 2008 financial crisis?",
+      "expected": "The 2008 crisis was caused by subprime mortgage lending, housing bubble collapse, complex mortgage-backed securities (MBS) and CDOs, inadequate risk assessment by rating agencies, and excessive leverage by financial institutions.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.40156308177310773,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.42742891605651834,
+          "metadata": {}
+        },
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.43767049027189575,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 284.632708000001,
+          "totalLatencyMs": 1763.1102499999997,
+          "answerLatencyMs": 1478.4552079999994
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_007",
+      "question": "How do vaccines work?",
+      "expected": "Vaccines introduce weakened, inactivated, or partial pathogens (or mRNA instructions) to train the immune system. This triggers antibody production and memory cell creation without causing disease, providing immunity against future infection.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.32081883218949847,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.4034861212500478,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.4129366107066672,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "easy",
+        "telemetry": {
+          "searchLatencyMs": 379.0290840000016,
+          "totalLatencyMs": 1841.9000840000008,
+          "answerLatencyMs": 1462.8485419999997
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_008",
+      "question": "What is the greenhouse effect and how does it relate to climate change?",
+      "expected": "The greenhouse effect is when atmospheric gases (CO2, methane, water vapor) trap heat from the sun, warming Earth. Human activities increase these gases, enhancing the effect and causing global warming and climate change.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.2748048146760509,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.3645237722817696,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.3944776936139047,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 477.07700000000114,
+          "totalLatencyMs": 2122.436292000002,
+          "answerLatencyMs": 1645.34375
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_009",
+      "question": "How does blockchain technology work?",
+      "expected": "Blockchain is a distributed ledger where transactions are grouped into blocks, cryptographically linked in a chain. Consensus mechanisms (like proof-of-work) validate transactions across nodes without central authority, making it tamper-resistant.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.3141158012620451,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.3915661830754844,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.4278399093177865,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "medium",
+        "telemetry": {
+          "searchLatencyMs": 339.6159169999992,
+          "totalLatencyMs": 1492.0965830000023,
+          "answerLatencyMs": 1152.4603749999987
+        }
+      }
+    },
+    {
+      "runId": "run-20251218-035902-ftje",
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "itemId": "rag_010",
+      "question": "What is CRISPR and how is it used in gene editing?",
+      "expected": "CRISPR-Cas9 is a gene editing tool derived from bacterial immune systems. Guide RNA directs the Cas9 protein to specific DNA sequences, which it cuts. The cell's repair mechanisms then modify the gene, enabling precise genetic changes.",
+      "actual": "I don't know",
+      "score": 0,
+      "correct": false,
+      "retrievedContext": [
+        {
+          "id": "16",
+          "content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+          "score": -0.3140669052648921,
+          "metadata": {}
+        },
+        {
+          "id": "15",
+          "content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+          "score": -0.36960531884212355,
+          "metadata": {}
+        },
+        {
+          "id": "14",
+          "content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+          "score": -0.38623588644260987,
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "difficulty": "hard",
+        "telemetry": {
+          "searchLatencyMs": 385.5901249999988,
+          "totalLatencyMs": 1590.7384579999998,
+          "answerLatencyMs": 1205.1271659999984
+        }
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "benchmark": "rag-template",
+      "provider": "aqrag",
+      "totalItems": 10,
+      "correctItems": 2,
+      "accuracy": 0.2,
+      "avgScore": 0.2
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "contextual-retrieval",
+      "totalItems": 10,
+      "correctItems": 1,
+      "accuracy": 0.1,
+      "avgScore": 0.1
+    },
+    {
+      "benchmark": "rag-template",
+      "provider": "openrouter-rag",
+      "totalItems": 10,
+      "correctItems": 1,
+      "accuracy": 0.1,
+      "avgScore": 0.1
+    }
+  ]
+}
