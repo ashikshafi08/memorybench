@@ -4,8 +4,12 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- Documents table to track source documents
 CREATE TABLE IF NOT EXISTS documents (
     id SERIAL PRIMARY KEY,
-    content TEXT NOT NULL
+    content TEXT NOT NULL,
+    run_tag TEXT
 );
+
+-- Index for run_tag filtering
+CREATE INDEX IF NOT EXISTS idx_documents_run_tag ON documents(run_tag);
 
 -- Chunks table for document chunks (without embeddings)
 CREATE TABLE IF NOT EXISTS chunks (

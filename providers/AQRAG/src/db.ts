@@ -26,10 +26,10 @@ export async function initDatabase() {
 }
 
 // Document operations
-export async function insertDocument(content: string): Promise<Document> {
+export async function insertDocument(content: string, runTag?: string): Promise<Document> {
 	const [document] = await sql`
-    INSERT INTO documents (content)
-    VALUES (${content})
+    INSERT INTO documents (content, run_tag)
+    VALUES (${content}, ${runTag ?? null})
     RETURNING *
   `;
 	return document;
@@ -92,10 +92,47 @@ export async function findSimilarWeighted(
 	// if questionWeight is 0, only search questions
 	questionWeight: number = 1.0,
 	limit: number,
+	runTag?: string,
 ): Promise<WeightedSearchResult[]> {
 	const chunkWeight = 1 - questionWeight;
 	// Ensure chunkWeight is between 0 and 1
 	const clampedWeight = Math.max(0, Math.min(1, chunkWeight));
+
+	// If runTag is provided, filter by it
+	if (runTag) {
+		return await sql`
+      WITH chunk_similarities AS (
+        SELECT
+          c.id,
+          c.content,
+          e.embedding <-> ${JSON.stringify(embedding)}::vector as chunk_distance,
+          ${clampedWeight} as chunk_weight
+        FROM chunks c
+        JOIN documents d ON c.document_id = d.id
+        JOIN embeddings e ON c.id = e.chunk_id AND e.is_question_embedding = false
+        WHERE d.run_tag = ${runTag}
+      ),
+      question_similarities AS (
+        SELECT
+          c.id,
+          e.embedding <-> ${JSON.stringify(embedding)}::vector as question_distance,
+          ${questionWeight} as question_weight
+        FROM chunks c
+        JOIN documents d ON c.document_id = d.id
+        JOIN embeddings e ON c.id = e.chunk_id AND e.is_question_embedding = true
+        WHERE d.run_tag = ${runTag}
+      )
+      SELECT
+        cs.*,
+        qs.question_distance,
+        (cs.chunk_distance * cs.chunk_weight + qs.question_distance * qs.question_weight) as weighted_distance,
+        (1 - (cs.chunk_distance * cs.chunk_weight + qs.question_distance * qs.question_weight)) as similarity_score
+      FROM chunk_similarities cs
+      JOIN question_similarities qs ON cs.id = qs.id
+      ORDER BY weighted_distance ASC
+      LIMIT ${limit}
+    `;
+	}
 
 	return await sql`
     WITH chunk_similarities AS (
@@ -124,6 +161,32 @@ export async function findSimilarWeighted(
     JOIN question_similarities qs ON cs.id = qs.id
     ORDER BY weighted_distance ASC
     LIMIT ${limit}
+  `;
+}
+
+// Delete all documents and related data for a specific run tag
+export async function deleteDocumentsByRunTag(runTag: string): Promise<void> {
+	// Delete embeddings for chunks that belong to documents with this run_tag
+	await sql`
+    DELETE FROM embeddings
+    WHERE chunk_id IN (
+      SELECT c.id FROM chunks c
+      JOIN documents d ON c.document_id = d.id
+      WHERE d.run_tag = ${runTag}
+    )
+  `;
+
+	// Delete chunks for documents with this run_tag
+	await sql`
+    DELETE FROM chunks
+    WHERE document_id IN (
+      SELECT id FROM documents WHERE run_tag = ${runTag}
+    )
+  `;
+
+	// Delete documents with this run_tag
+	await sql`
+    DELETE FROM documents WHERE run_tag = ${runTag}
   `;
 }
 

@@ -1,19 +1,15 @@
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { openai } from "@ai-sdk/openai";
 import { embedMany } from "ai";
 
-const openrouter = createOpenRouter({
-	apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 /**
- * Generate embeddings using OpenRouter's text-embedding-3-small model
+ * Generate embeddings using OpenAI's text-embedding-3-small model
  * @param texts - Array of texts to embed
  * @returns Array of embedding vectors
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
 	try {
 		const { embeddings } = await embedMany({
-			model: openrouter.textEmbeddingModel("openai/text-embedding-3-small"),
+			model: openai.textEmbeddingModel("text-embedding-3-small"),
 			values: texts,
 		});
 

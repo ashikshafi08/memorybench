@@ -4,4 +4,5 @@
 
 export { AQRAGAdapter } from "./aqrag.ts";
 export { ContextualRetrievalAdapter } from "./contextual-retrieval.ts";
+export { OpenRouterRAGAdapter } from "./openrouter-rag.ts";
 

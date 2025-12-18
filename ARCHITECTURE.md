@@ -1129,11 +1129,11 @@ export class BenchmarkRunner {
 
 ### Results Storage
 
-SQLite-based storage for evaluation results.
+SQLite-based storage for evaluation results (using Bun's built-in SQLite).
 
 ```typescript
 // core/results.ts
-import Database from 'better-sqlite3';
+import { Database } from 'bun:sqlite';
 
 export class ResultsStore {
   private db: Database.Database;

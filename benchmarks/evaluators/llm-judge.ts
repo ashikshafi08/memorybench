@@ -27,8 +27,9 @@ export interface EvaluatorOptions {
 
 /**
  * Get the model provider for a given model string.
+ * Returns a model compatible with the AI SDK's generateText function.
  */
-function getModelProvider(modelString: string) {
+function getModelProvider(modelString: string): Parameters<typeof generateText>[0]["model"] {
 	const [provider, ...modelParts] = modelString.split("/");
 	const model = modelParts.join("/") || modelString;
 
@@ -43,7 +44,8 @@ function getModelProvider(modelString: string) {
 			const openrouter = createOpenRouter({
 				apiKey: process.env.OPENROUTER_API_KEY,
 			});
-			return openrouter(model);
+			// Cast to any to handle OpenRouter's model type compatibility
+			return openrouter.chat(model) as unknown as Parameters<typeof generateText>[0]["model"];
 		}
 		case "claude":
 			return anthropic(model);

@@ -1,8 +1,23 @@
+/**
+ * Legacy entry point - DEPRECATED
+ *
+ * @deprecated Use the new CLI instead:
+ *   bun run ./cli/index.ts --help
+ *   OR
+ *   memorybench --help
+ *
+ * This file is kept for backwards compatibility with older scripts.
+ * New usage should go through the CLI which uses:
+ * - YAML config-driven providers (providers/configs/*.yaml)
+ * - YAML config-driven benchmarks (benchmarks/configs/*.yaml)
+ * - Pluggable metric registry (core/metrics/)
+ */
+
 import type { BenchmarkRegistry, BenchmarkType } from "./benchmarks";
 import { ragBenchmarkData } from "./benchmarks";
 import { AQRAGProvider, ContextualRetrievalProvider, type TemplateType } from "./providers";
 
-// Provider registry
+// Provider registry (legacy)
 const PROVIDERS: Record<string, TemplateType> = {
 	ContextualRetrieval: ContextualRetrievalProvider,
 	AQRAG: AQRAGProvider,
