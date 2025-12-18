@@ -5,6 +5,8 @@
 
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
 import type { BenchmarkConfig, BenchmarkItem, SearchResult } from "../../core/config.ts";
 
@@ -35,6 +37,14 @@ function getModelProvider(modelString: string) {
 			return anthropic(model);
 		case "google":
 			return google(model);
+		case "openai":
+			return openai(model);
+		case "openrouter": {
+			const openrouter = createOpenRouter({
+				apiKey: process.env.OPENROUTER_API_KEY,
+			});
+			return openrouter(model);
+		}
 		case "claude":
 			return anthropic(model);
 		default:
@@ -43,10 +53,7 @@ function getModelProvider(modelString: string) {
 				return anthropic(modelString);
 			}
 			if (modelString.includes("gpt")) {
-				// Would need @ai-sdk/openai
-				throw new Error(
-					`OpenAI models require @ai-sdk/openai package. Model: ${modelString}`,
-				);
+				return openai(modelString);
 			}
 			return anthropic(model);
 	}
@@ -82,7 +89,7 @@ export async function generateAnswer(
 	const modelString =
 		options?.answeringModel ??
 		answeringModelConfig?.model ??
-		"anthropic/claude-3-5-haiku-latest";
+		"openrouter/openai/gpt-4o-mini";
 	const model = getModelProvider(modelString);
 
 	// Get the prompt template
@@ -158,7 +165,7 @@ export async function judgeAnswer(
 	const modelString =
 		options?.judgeModel ??
 		judgeConfig?.model ??
-		"anthropic/claude-3-5-haiku-latest";
+		"openrouter/openai/gpt-4o-mini";
 	const model = getModelProvider(modelString);
 
 	// Get the prompt template

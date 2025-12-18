@@ -1,0 +1,257 @@
+[
+	{
+		"id": "rag_001",
+		"question": "What is the capital of France?",
+		"expected_answer": "Paris is the capital of France.",
+		"documents": [
+			{
+				"id": "doc_1",
+				"content": "Paris is the capital and most populous city of France. With an official estimated population of 2,102,650 residents as of 1 January 2023 in an area of more than 105 km², Paris is the fourth-largest city in the European Union and the 30th most densely populated city in the world in 2022.",
+				"title": "Geography of France"
+			},
+			{
+				"id": "doc_2",
+				"content": "France is a country primarily located in Western Europe. It also comprises of various overseas regions and territories in the Americas and the Atlantic, Pacific and Indian Oceans.",
+				"title": "France Overview"
+			}
+		],
+		"metadata": {
+			"difficulty": "easy",
+			"category": "geography"
+		}
+	},
+	{
+		"id": "rag_002",
+		"question": "How does photosynthesis work in plants?",
+		"expected_answer": "Photosynthesis converts light energy into chemical energy stored in glucose. It occurs in chloroplasts and involves two stages: light-dependent reactions in thylakoid membranes, and the Calvin cycle in the stroma.",
+		"documents": [
+			{
+				"id": "doc_3",
+				"content": "Photosynthesis is a process used by plants to convert light energy into chemical energy stored in carbohydrate molecules like sugars and starches, synthesized from carbon dioxide and water.",
+				"title": "Photosynthesis Process"
+			},
+			{
+				"id": "doc_4",
+				"content": "The process of photosynthesis occurs in two stages: the light-dependent reactions and the light-independent reactions (Calvin cycle). The light-dependent reactions occur in the thylakoid membranes of chloroplasts, while the Calvin cycle takes place in the stroma.",
+				"title": "Stages of Photosynthesis"
+			},
+			{
+				"id": "doc_5",
+				"content": "Chloroplasts are organelles found in plant cells that conduct photosynthesis. They absorb sunlight and use it with water and carbon dioxide to produce glucose for the plant.",
+				"title": "Chloroplasts Function"
+			}
+		],
+		"metadata": {
+			"difficulty": "medium",
+			"category": "biology"
+		}
+	},
+	{
+		"id": "rag_003",
+		"question": "What are the economic risks of quantum computing to cryptography?",
+		"expected_answer": "Quantum computing threatens RSA and ECC encryption using Shor's algorithm. This could compromise trillions in digital transactions and require hundreds of billions in infrastructure upgrades to quantum-resistant cryptography.",
+		"documents": [
+			{
+				"id": "doc_6",
+				"content": "Quantum computers can break cryptographic systems using Shor's algorithm to efficiently factor large integers and compute discrete logarithms, which underlie RSA and elliptic curve cryptography (ECC).",
+				"title": "Quantum Computing and Cryptography"
+			},
+			{
+				"id": "doc_7",
+				"content": "The global cybersecurity market was valued at $173 billion in 2022. Practical quantum computing could create new market segments for quantum-resistant cryptography and post-quantum security solutions.",
+				"title": "Cybersecurity Market Analysis"
+			},
+			{
+				"id": "doc_8",
+				"content": "Financial institutions process trillions of dollars in digital transactions daily protected by current cryptography. Transitioning to quantum-resistant cryptography could cost hundreds of billions in infrastructure upgrades.",
+				"title": "Economic Impact of Cryptography"
+			}
+		],
+		"metadata": {
+			"difficulty": "hard",
+			"category": "technology"
+		}
+	},
+	{
+		"id": "rag_004",
+		"question": "What is the difference between machine learning and deep learning?",
+		"expected_answer": "Machine learning uses algorithms to learn patterns from data. Deep learning is a subset using neural networks with multiple layers. Deep learning requires more data and compute but can learn complex patterns automatically without manual feature engineering.",
+		"documents": [
+			{
+				"id": "doc_9",
+				"content": "Machine learning is a subset of artificial intelligence that enables systems to learn and improve from experience without being explicitly programmed. It uses algorithms to parse data, learn from it, and make predictions.",
+				"title": "Machine Learning Basics"
+			},
+			{
+				"id": "doc_10",
+				"content": "Deep learning is a subset of machine learning that uses artificial neural networks with multiple layers (hence 'deep'). These networks can automatically learn hierarchical representations of data, eliminating the need for manual feature engineering.",
+				"title": "Deep Learning Overview"
+			},
+			{
+				"id": "doc_11",
+				"content": "While traditional machine learning works well with smaller datasets and requires feature engineering, deep learning typically needs large amounts of data and significant computational resources but can discover intricate patterns automatically.",
+				"title": "ML vs DL Comparison"
+			}
+		],
+		"metadata": {
+			"difficulty": "medium",
+			"category": "technology"
+		}
+	},
+	{
+		"id": "rag_005",
+		"question": "How does the human immune system fight viral infections?",
+		"expected_answer": "The immune system uses innate responses (inflammation, fever, interferons) and adaptive responses (T-cells killing infected cells, B-cells producing antibodies). Memory cells provide long-term immunity for future infections.",
+		"documents": [
+			{
+				"id": "doc_12",
+				"content": "The innate immune system provides immediate, non-specific defense against pathogens through physical barriers, inflammation, fever, and proteins like interferons that inhibit viral replication.",
+				"title": "Innate Immunity"
+			},
+			{
+				"id": "doc_13",
+				"content": "The adaptive immune system produces specific responses to pathogens. T-cells directly kill infected cells, while B-cells produce antibodies that neutralize viruses. This response takes days to develop but is highly targeted.",
+				"title": "Adaptive Immunity"
+			},
+			{
+				"id": "doc_14",
+				"content": "After fighting an infection, the immune system creates memory B-cells and memory T-cells that remain in the body for years. These cells enable a faster, stronger response if the same pathogen is encountered again.",
+				"title": "Immunological Memory"
+			}
+		],
+		"metadata": {
+			"difficulty": "medium",
+			"category": "biology"
+		}
+	},
+	{
+		"id": "rag_006",
+		"question": "What caused the 2008 financial crisis?",
+		"expected_answer": "The 2008 crisis was caused by subprime mortgage lending, housing bubble collapse, complex mortgage-backed securities (MBS) and CDOs, inadequate risk assessment by rating agencies, and excessive leverage by financial institutions.",
+		"documents": [
+			{
+				"id": "doc_15",
+				"content": "The 2008 financial crisis originated from subprime mortgage lending in the United States. Banks issued mortgages to borrowers with poor credit, then packaged these into mortgage-backed securities (MBS) sold to investors worldwide.",
+				"title": "Subprime Mortgage Crisis"
+			},
+			{
+				"id": "doc_16",
+				"content": "Investment banks created complex derivatives called Collateralized Debt Obligations (CDOs) from mortgage-backed securities. Rating agencies gave these products AAA ratings despite their underlying risk, misleading investors about their safety.",
+				"title": "Financial Derivatives and the Crisis"
+			},
+			{
+				"id": "doc_17",
+				"content": "When the U.S. housing bubble burst in 2007, mortgage defaults spiked. Financial institutions holding MBS and CDOs faced massive losses. Lehman Brothers collapsed in September 2008, triggering a global financial panic.",
+				"title": "Housing Bubble Collapse"
+			}
+		],
+		"metadata": {
+			"difficulty": "hard",
+			"category": "economics"
+		}
+	},
+	{
+		"id": "rag_007",
+		"question": "How do vaccines work?",
+		"expected_answer": "Vaccines introduce weakened, inactivated, or partial pathogens (or mRNA instructions) to train the immune system. This triggers antibody production and memory cell creation without causing disease, providing immunity against future infection.",
+		"documents": [
+			{
+				"id": "doc_18",
+				"content": "Vaccines work by introducing a weakened, inactivated, or partial form of a pathogen to the body. This stimulates the immune system to produce antibodies and create memory cells without causing the actual disease.",
+				"title": "Vaccine Mechanism"
+			},
+			{
+				"id": "doc_19",
+				"content": "mRNA vaccines like those for COVID-19 work differently. They provide genetic instructions for cells to produce a harmless piece of the pathogen (like the spike protein), triggering an immune response.",
+				"title": "mRNA Vaccines"
+			},
+			{
+				"id": "doc_20",
+				"content": "After vaccination, if the body encounters the real pathogen, memory B-cells and T-cells quickly recognize it and mount a rapid immune response, often preventing infection or reducing disease severity.",
+				"title": "Vaccine-Induced Immunity"
+			}
+		],
+		"metadata": {
+			"difficulty": "easy",
+			"category": "medicine"
+		}
+	},
+	{
+		"id": "rag_008",
+		"question": "What is the greenhouse effect and how does it relate to climate change?",
+		"expected_answer": "The greenhouse effect is when atmospheric gases (CO2, methane, water vapor) trap heat from the sun, warming Earth. Human activities increase these gases, enhancing the effect and causing global warming and climate change.",
+		"documents": [
+			{
+				"id": "doc_21",
+				"content": "The greenhouse effect is a natural process where gases in Earth's atmosphere trap heat from the sun. Without it, Earth's average temperature would be about -18°C instead of the current 15°C. Key greenhouse gases include carbon dioxide, methane, and water vapor.",
+				"title": "The Greenhouse Effect"
+			},
+			{
+				"id": "doc_22",
+				"content": "Human activities, particularly burning fossil fuels and deforestation, have increased atmospheric CO2 from 280 ppm pre-industrial to over 420 ppm today. This enhanced greenhouse effect is causing global temperatures to rise.",
+				"title": "Human Impact on Greenhouse Gases"
+			},
+			{
+				"id": "doc_23",
+				"content": "Climate change consequences include rising sea levels, more frequent extreme weather events, ecosystem disruption, and agricultural challenges. The Paris Agreement aims to limit warming to 1.5-2°C above pre-industrial levels.",
+				"title": "Climate Change Impacts"
+			}
+		],
+		"metadata": {
+			"difficulty": "medium",
+			"category": "environment"
+		}
+	},
+	{
+		"id": "rag_009",
+		"question": "How does blockchain technology work?",
+		"expected_answer": "Blockchain is a distributed ledger where transactions are grouped into blocks, cryptographically linked in a chain. Consensus mechanisms (like proof-of-work) validate transactions across nodes without central authority, making it tamper-resistant.",
+		"documents": [
+			{
+				"id": "doc_24",
+				"content": "A blockchain is a distributed ledger technology where data is stored in blocks that are cryptographically linked together. Each block contains a hash of the previous block, creating an immutable chain of records.",
+				"title": "Blockchain Fundamentals"
+			},
+			{
+				"id": "doc_25",
+				"content": "Consensus mechanisms like Proof-of-Work (PoW) or Proof-of-Stake (PoS) allow blockchain networks to agree on the state of the ledger without a central authority. In PoW, miners solve complex puzzles to validate transactions.",
+				"title": "Blockchain Consensus"
+			},
+			{
+				"id": "doc_26",
+				"content": "Blockchain's distributed nature means copies of the ledger exist across thousands of nodes. To alter a transaction, an attacker would need to change it across a majority of nodes simultaneously, making tampering practically impossible.",
+				"title": "Blockchain Security"
+			}
+		],
+		"metadata": {
+			"difficulty": "medium",
+			"category": "technology"
+		}
+	},
+	{
+		"id": "rag_010",
+		"question": "What is CRISPR and how is it used in gene editing?",
+		"expected_answer": "CRISPR-Cas9 is a gene editing tool derived from bacterial immune systems. Guide RNA directs the Cas9 protein to specific DNA sequences, which it cuts. The cell's repair mechanisms then modify the gene, enabling precise genetic changes.",
+		"documents": [
+			{
+				"id": "doc_27",
+				"content": "CRISPR (Clustered Regularly Interspaced Short Palindromic Repeats) is a gene editing technology adapted from a natural defense mechanism in bacteria. It uses a guide RNA to direct the Cas9 enzyme to specific locations in the genome.",
+				"title": "CRISPR Basics"
+			},
+			{
+				"id": "doc_28",
+				"content": "The Cas9 protein acts as molecular scissors, cutting DNA at the location specified by the guide RNA. The cell's natural repair mechanisms then kick in, allowing scientists to delete, modify, or insert new genetic material.",
+				"title": "Cas9 Mechanism"
+			},
+			{
+				"id": "doc_29",
+				"content": "CRISPR applications include treating genetic diseases like sickle cell anemia, developing disease-resistant crops, creating gene drives to control mosquito populations, and researching cancer treatments.",
+				"title": "CRISPR Applications"
+			}
+		],
+		"metadata": {
+			"difficulty": "hard",
+			"category": "biology"
+		}
+	}
+]

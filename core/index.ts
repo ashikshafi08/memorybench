@@ -7,5 +7,8 @@ export * from "./registry.ts";
 export * from "./checkpoint.ts";
 export * from "./runner.ts";
 export * from "./results.ts";
-export * from "./metrics.ts";
+export * from "./telemetry.ts";
+
+// Metrics module - new registry-based system
+export * from "./metrics/index.ts";
 

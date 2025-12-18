@@ -9,6 +9,10 @@ import type { BenchmarkConfig, BenchmarkItem, PreparedData, SearchResult, EvalRe
 import type { Provider } from "../providers/base/types.ts";
 import { createProvider } from "../providers/factory.ts";
 import { loadBenchmarkData, prepareBenchmarkContexts } from "../benchmarks/loaders/index.ts";
+import { getDefaultRegistry, UnknownMetricError } from "./metrics/index.ts";
+import type { MetricResult } from "./metrics/interface.ts";
+import { measureLatency, addTelemetryToMetadata, type ItemTelemetry } from "./telemetry.ts";
+import { evaluate as evaluateWithLLM, type EvaluationResult } from "../benchmarks/evaluators/llm-judge.ts";
 
 export interface RunOptions {
 	benchmarks: string[];
@@ -21,6 +25,11 @@ export interface RunOptions {
 	runId?: string;
 	resume?: boolean;
 	outputDir?: string;
+	/**
+	 * Metrics to compute. If provided, overrides benchmark YAML config.
+	 * Falls back to benchmark YAML `metrics:` if not specified, then to ["accuracy"].
+	 */
+	metrics?: string[];
 }
 
 export interface RunResult {
@@ -39,7 +48,10 @@ export interface BenchmarkProviderResult {
 	totalItems: number;
 	completedItems: number;
 	failedItems: number;
+	/** @deprecated Use metrics array instead. Kept for backward compatibility. */
 	accuracy: number;
+	/** Computed metrics from the registry */
+	metrics: import("./metrics/interface.ts").MetricResult[];
 	results: EvalResult[];
 }
 
@@ -204,10 +216,28 @@ export class BenchmarkRunner {
 				console.warn(`Failed to clear provider data: ${error}`);
 			}
 
-			// Calculate metrics
-			const correctCount = evalResults.filter((r) => r.correct).length;
-			const accuracy =
-				evalResults.length > 0 ? correctCount / evalResults.length : 0;
+			// Determine which metrics to compute
+			// Priority: CLI override > benchmark YAML > default ["accuracy"]
+			const metricsToCompute =
+				options.metrics ??
+				benchmarkConfig.metrics ??
+				["accuracy"];
+
+			// Compute metrics using the registry
+			const registry = getDefaultRegistry();
+
+			// Validate all metrics exist (fail fast)
+			registry.validateMetrics(metricsToCompute);
+
+			const computedMetrics = registry.computeAll(metricsToCompute, evalResults);
+
+			// Extract accuracy for backward compatibility
+			const accuracyMetric = computedMetrics.find((m) => m.name === "accuracy");
+			const accuracy = accuracyMetric?.value ?? (
+				evalResults.length > 0
+					? evalResults.filter((r) => r.correct).length / evalResults.length
+					: 0
+			);
 
 			return {
 				benchmark: benchmarkName,
@@ -216,6 +246,7 @@ export class BenchmarkRunner {
 				completedItems: evalResults.length,
 				failedItems: items.length - evalResults.length,
 				accuracy,
+				metrics: computedMetrics,
 				results: evalResults,
 			};
 		} finally {
@@ -345,23 +376,44 @@ export class BenchmarkRunner {
 					"evaluate",
 				);
 
-				// Search for relevant context
-				const searchResults = await provider.searchQuery(
-					item.question,
-					runTag,
-					{
-						limit: benchmarkConfig.search?.defaultLimit ?? 10,
-						threshold: benchmarkConfig.search?.defaultThreshold ?? 0.3,
-						includeChunks: benchmarkConfig.search?.includeChunks ?? false,
-					},
-				);
+				// Start total timing
+				const totalStart = performance.now();
 
-				// Evaluate (placeholder - will be replaced by LLM judge)
-				const evaluation = await this.evaluate(
-					item,
-					searchResults,
-					benchmarkConfig,
-				);
+				// Search for relevant context (with timing)
+				const { result: searchResults, latencyMs: searchLatencyMs } =
+					await measureLatency(() =>
+						provider.searchQuery(item.question, runTag, {
+							limit: benchmarkConfig.search?.defaultLimit ?? 10,
+							threshold: benchmarkConfig.search?.defaultThreshold ?? 0.3,
+							includeChunks: benchmarkConfig.search?.includeChunks ?? false,
+						}),
+					);
+
+				// Evaluate (with timing)
+				const { result: evaluation, latencyMs: evalLatencyMs } =
+					await measureLatency(() =>
+						this.evaluate(item, searchResults, benchmarkConfig),
+					);
+
+				const totalLatencyMs = performance.now() - totalStart;
+
+				// Build telemetry data
+				const telemetry: ItemTelemetry = {
+					searchLatencyMs,
+					totalLatencyMs,
+					// answerLatencyMs and judgeLatencyMs will be populated
+					// once the real LLM judge is wired up
+				};
+
+				// Note: When using llm-judge evaluation method, the evalLatencyMs
+				// includes both answer generation and judging. Once the real
+				// evaluator is integrated, we'll split this into answerLatencyMs
+				// and judgeLatencyMs separately.
+				if (benchmarkConfig.evaluation?.method === "llm-judge") {
+					// For now, attribute the eval time to the combined answer+judge
+					// This will be refined when the real evaluator is integrated
+					telemetry.answerLatencyMs = evalLatencyMs;
+				}
 
 				const evalResult: EvalResult = {
 					runId,
@@ -374,11 +426,14 @@ export class BenchmarkRunner {
 					score: evaluation.score,
 					correct: evaluation.correct,
 					retrievedContext: searchResults,
-					metadata: {
-						...item.metadata,
-						questionType: item.questionType,
-						category: item.category,
-					},
+					metadata: addTelemetryToMetadata(
+						{
+							...item.metadata,
+							questionType: item.questionType,
+							category: item.category,
+						},
+						telemetry,
+					),
 				};
 
 				results.push(evalResult);
@@ -426,55 +481,23 @@ export class BenchmarkRunner {
 	}
 
 	/**
-	 * Evaluate a single item (placeholder - will be replaced by LLM judge).
+	 * Evaluate a single item using the configured evaluation method.
+	 * Supports exact-match and LLM-judge evaluation.
 	 */
 	private async evaluate(
 		item: BenchmarkItem,
 		searchResults: SearchResult[],
 		benchmarkConfig: BenchmarkConfig,
-	): Promise<{ answer: string; score: number; correct: boolean }> {
-		const method = benchmarkConfig.evaluation?.method ?? "exact-match";
+	): Promise<{ answer: string; score: number; correct: boolean; reasoning?: string }> {
+		// Use the real evaluator from llm-judge.ts
+		const result = await evaluateWithLLM(item, searchResults, benchmarkConfig);
 
-		// Combine search results into context
-		const retrievedContext = searchResults
-			.map((r) => r.content)
-			.join("\n\n");
-
-		switch (method) {
-			case "exact-match": {
-				// Simple exact match (case-insensitive, trimmed)
-				const normalizedExpected = item.answer.toLowerCase().trim();
-				const normalizedRetrieved = retrievedContext.toLowerCase().trim();
-
-				const correct = normalizedRetrieved.includes(normalizedExpected);
-
-				return {
-					answer: retrievedContext,
-					score: correct ? 1 : 0,
-					correct,
-				};
-			}
-
-			case "llm-judge": {
-				// Placeholder - will be implemented in evaluation-llm-judge todo
-				// For now, use a simple heuristic
-				const answer = retrievedContext.substring(0, 500);
-				const hasRelevantContent = searchResults.length > 0;
-
-				return {
-					answer,
-					score: hasRelevantContent ? 0.5 : 0,
-					correct: hasRelevantContent,
-				};
-			}
-
-			default:
-				return {
-					answer: retrievedContext,
-					score: 0,
-					correct: false,
-				};
-		}
+		return {
+			answer: result.answer,
+			score: result.score,
+			correct: result.correct,
+			reasoning: result.reasoning,
+		};
 	}
 
 	/**

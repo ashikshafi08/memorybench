@@ -132,6 +132,8 @@ evaluation:
 metrics:
   - accuracy
   - accuracy_by_question_type
+  - f1
+  - recall_at_5
 
 runtime:
   checkpointing: true

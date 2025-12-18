@@ -88,8 +88,9 @@ evaluation:
 metrics:
   - accuracy
   - accuracy_by_category
+  - f1
+  - bleu_1
   - recall_at_5
-  - precision_at_5
 
 runtime:
   checkpointing: true

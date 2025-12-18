@@ -143,8 +143,8 @@ function mapSingleItem(
 	const question = schema.question ? getField(raw, schema.question) : "";
 	const answer = schema.answer ? getField(raw, schema.answer) : "";
 
-	// Extract contexts
-	const contexts = extractContexts(raw, config);
+	// Extract contexts (pass item ID for unique context IDs)
+	const contexts = extractContexts(raw, config, String(id));
 
 	// Extract metadata
 	const metadata: Record<string, unknown> = {};
@@ -191,8 +191,8 @@ function mapNestedQuestions(
 		return [];
 	}
 
-	// Extract contexts (shared across all questions)
-	const contexts = extractContexts(raw, config);
+	// Extract contexts (shared across all questions, use baseId for unique context IDs)
+	const contexts = extractContexts(raw, config, String(baseId));
 
 	// Extract shared metadata
 	const sharedMetadata: Record<string, unknown> = {};
@@ -244,10 +244,12 @@ function mapNestedQuestions(
 
 /**
  * Extract contexts from a raw item based on schema config.
+ * @param itemId - The item ID to use as prefix for unique context IDs
  */
 function extractContexts(
 	raw: RawDataItem,
 	config: BenchmarkConfig,
+	itemId: string,
 ): PreparedData[] {
 	const { schema, ingestion } = config;
 	const contextConfig = schema.context;
@@ -281,7 +283,7 @@ function extractContexts(
 				const content = formatContextItem(item, contextConfig.itemSchema, date, ingestion?.preprocessing?.formatTemplate);
 
 				contexts.push({
-					id: `context-${i}`,
+					id: `${itemId}-ctx-${i}`,
 					content,
 					metadata: {
 						index: i,
@@ -324,7 +326,7 @@ function extractContexts(
 				const content = formatContextItem(value, contextConfig.itemSchema, date, ingestion?.preprocessing?.formatTemplate);
 
 				contexts.push({
-					id: `session-${sessionIndex}`,
+					id: `${itemId}-session-${sessionIndex}`,
 					content,
 					metadata: {
 						sessionKey: key,
@@ -340,7 +342,7 @@ function extractContexts(
 		case "string": {
 			// Single string context
 			contexts.push({
-				id: "context-0",
+				id: `${itemId}-ctx-0`,
 				content: String(contextData),
 				metadata: {},
 			});

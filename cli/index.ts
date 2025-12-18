@@ -6,8 +6,10 @@
 
 import { Registry, getRegistry } from "../core/registry.ts";
 import { CheckpointManager } from "../core/checkpoint.ts";
-import { BenchmarkRunner, type ProgressCallback } from "../core/runner.ts";
+import { BenchmarkRunner, type ProgressCallback, type RunResult } from "../core/runner.ts";
 import { ResultsStore } from "../core/results.ts";
+import { getDefaultRegistry, UnknownMetricError, getAvailableMetrics } from "../core/metrics/index.ts";
+import type { MetricResult } from "../core/metrics/interface.ts";
 
 interface ParsedArgs {
 	command: string;
@@ -25,6 +27,92 @@ function toStringArray(
 	if (value === undefined || value === true) return undefined;
 	if (value === false) return undefined;
 	return Array.isArray(value) ? value : [value];
+}
+
+/**
+ * Format a metric value for display.
+ */
+function formatMetricValue(name: string, value: number): string {
+	// Most metrics are ratios (0-1), display as percentage
+	const isPercentage = /accuracy|recall|precision|mrr|success|rate|f1|bleu|rouge/i.test(name);
+	if (isPercentage) {
+		return `${(value * 100).toFixed(1)}%`;
+	}
+	// Latency metrics are in ms
+	if (/latency/i.test(name)) {
+		return `${value.toFixed(0)}ms`;
+	}
+	return value.toFixed(4);
+}
+
+/**
+ * Print results in a clean table format.
+ */
+function printResultsTable(result: RunResult): void {
+	// Collect all unique metric names across all results
+	const allMetricNames = new Set<string>();
+	for (const r of result.results) {
+		for (const m of r.metrics) {
+			allMetricNames.add(m.name);
+		}
+	}
+	const metricNames = Array.from(allMetricNames);
+
+	// Calculate column widths
+	const benchProviderCol = Math.max(
+		20,
+		...result.results.map((r) => `${r.benchmark} × ${r.provider}`.length),
+	);
+	const itemsCol = 10;
+	const metricColWidth = 12;
+
+	// Build header
+	const headerParts = [
+		"Benchmark × Provider".padEnd(benchProviderCol),
+		"Items".padStart(itemsCol),
+		...metricNames.map((m) => m.padStart(metricColWidth)),
+	];
+	const headerLine = headerParts.join(" │ ");
+	const totalWidth = headerLine.length + 4;
+
+	// Print table
+	console.log("\n╭" + "─".repeat(totalWidth) + "╮");
+	console.log("│ " + "RESULTS".padEnd(totalWidth - 1) + "│");
+	console.log("├" + "─".repeat(totalWidth) + "┤");
+	console.log("│ " + headerLine + " │");
+	console.log("├" + "─".repeat(totalWidth) + "┤");
+
+	// Print each result row
+	for (const r of result.results) {
+		const benchProvider = `${r.benchmark} × ${r.provider}`.padEnd(benchProviderCol);
+		const items = `${r.completedItems}/${r.totalItems}`.padStart(itemsCol);
+
+		// Build metric values in the same order as header
+		const metricValues = metricNames.map((name) => {
+			const metric = r.metrics.find((m) => m.name === name);
+			if (!metric) return "-".padStart(metricColWidth);
+			return formatMetricValue(name, metric.value).padStart(metricColWidth);
+		});
+
+		const rowParts = [benchProvider, items, ...metricValues];
+		console.log("│ " + rowParts.join(" │ ") + " │");
+	}
+
+	console.log("├" + "─".repeat(totalWidth) + "┤");
+
+	// Summary row
+	const summaryLabel = "Overall".padEnd(benchProviderCol);
+	const summaryItems = `${result.summary.completedItems}/${result.summary.totalItems}`.padStart(itemsCol);
+	const summaryAccuracy = formatMetricValue("accuracy", result.summary.overallAccuracy).padStart(metricColWidth);
+	
+	// Fill other metrics with dashes
+	const summaryMetrics = metricNames.map((name) => {
+		if (name === "accuracy") return summaryAccuracy;
+		return "-".padStart(metricColWidth);
+	});
+
+	console.log("│ " + [summaryLabel, summaryItems, ...summaryMetrics].join(" │ ") + " │");
+	console.log("╰" + "─".repeat(totalWidth) + "╯");
 }
 
 /**
@@ -113,8 +201,31 @@ Examples:
   memorybench list --benchmarks --tags temporal
   memorybench describe longmemeval
   memorybench eval --benchmarks longmemeval --providers supermemory --limit 10
+  memorybench eval --benchmarks rag-template --providers supermemory --metrics accuracy f1 recall_at_5
   memorybench results run-20251216-123456-abc1
   memorybench export run-20251216-123456-abc1 --format csv --output results.csv
+
+Metrics (use with --metrics):
+
+  Memory Metrics (recommended for memory benchmarks):
+    accuracy              LLM-judge correctness
+    accuracy_by_question_type  Breakdown by question type
+    accuracy_by_category  Breakdown by category
+    f1                    Token-level F1 score
+    bleu_1                BLEU-1 unigram precision
+    rouge_l               ROUGE-L longest common subsequence
+    success_at_5, success_at_10   Semantic retrieval success
+    recall_at_5, recall_at_10     Context recall
+
+  Retrieval Metrics (for pure retrieval benchmarks):
+    mrr                   Mean Reciprocal Rank (not for memory!)
+    precision_at_5, precision_at_10  Precision at K
+    avg_retrieval_score   Average similarity score
+
+  Performance Metrics:
+    avg_search_latency_ms Average search latency
+    avg_total_latency_ms  Average end-to-end latency
+    p95_latency_ms        95th percentile latency
 
 Run 'memorybench <command> --help' for more information on a command.
 `);
@@ -193,6 +304,7 @@ async function describeCommand(
 			console.log(`    Batch:     ${p.capabilities.supportsBatch}`);
 			console.log(`    Metadata:  ${p.capabilities.supportsMetadata}`);
 			console.log(`    Rerank:    ${p.capabilities.supportsRerank}`);
+
 		}
 
 		console.log();
@@ -222,6 +334,8 @@ async function describeCommand(
 				console.log(`    - ${qt.name}`);
 			}
 		}
+
+		
 
 		if (b.metrics?.length) {
 			console.log("\n  Metrics:");
@@ -286,6 +400,21 @@ async function evalCommand(
 	const questionType = options["question-type"] as string | undefined;
 	const runId = options["run-id"] as string | undefined;
 	const outputDir = (options.output as string) ?? "./results";
+	const metrics = toStringArray(options.metrics);
+
+	// Validate metrics if provided
+	if (metrics && metrics.length > 0) {
+		const metricRegistry = getDefaultRegistry();
+		for (const metric of metrics) {
+			if (!metricRegistry.has(metric)) {
+				const available = getAvailableMetrics();
+				console.error(
+					`❌ Unknown metric "${metric}". Available: ${available.join(", ")}`,
+				);
+				process.exit(1);
+			}
+		}
+	}
 
 	// Create components
 	const checkpointManager = new CheckpointManager("./checkpoints");
@@ -331,6 +460,7 @@ async function evalCommand(
 			concurrency,
 			runId,
 			outputDir,
+			metrics,
 		});
 
 		// Clear progress line
@@ -339,31 +469,8 @@ async function evalCommand(
 		// Save results
 		resultsStore.saveRun(result);
 
-		// Print results
-		console.log(
-			"╭──────────────────────────────────────────────────────────────────╮",
-		);
-		console.log(`│ RESULTS                                                          │`);
-		console.log(
-			"├───────────────┬──────────┬───────────────────────────────────────┤",
-		);
-		console.log(
-			`│ Provider      │ Accuracy │ Details                               │`,
-		);
-		console.log(
-			"├───────────────┼──────────┼───────────────────────────────────────┤",
-		);
-
-		for (const r of result.results) {
-			const accuracy = (r.accuracy * 100).toFixed(1) + "%";
-			console.log(
-				`│ ${r.provider.padEnd(13)} │ ${accuracy.padEnd(8)} │ ${r.completedItems}/${r.totalItems} items                            │`,
-			);
-		}
-
-		console.log(
-			"╰───────────────┴──────────┴───────────────────────────────────────╯",
-		);
+		// Print results in table format
+		printResultsTable(result);
 
 		console.log(`\n✅ Run ID: ${result.runId}`);
 		console.log(`   Results saved to: ${outputDir}/results.db`);
@@ -394,56 +501,92 @@ async function resultsCommand(
 			process.exit(1);
 		}
 
-		const metrics = resultsStore.getRunMetrics(runId);
+		// Parse metrics to compute (if provided)
+		const requestedMetrics = toStringArray(options.metrics) ?? ["accuracy"];
+
+		// Validate metrics
+		const metricRegistry = getDefaultRegistry();
+		for (const metric of requestedMetrics) {
+			if (!metricRegistry.has(metric)) {
+				const available = getAvailableMetrics();
+				console.error(
+					`❌ Unknown metric "${metric}". Available: ${available.join(", ")}`,
+				);
+				process.exit(1);
+			}
+		}
+
+		// Get all results for this run
+		const allResults = resultsStore.getRunResults(runId);
+
+		// Group results by benchmark/provider
+		const groupedResults = new Map<string, typeof allResults>();
+		for (const result of allResults) {
+			const key = `${result.benchmark}|${result.provider}`;
+			if (!groupedResults.has(key)) {
+				groupedResults.set(key, []);
+			}
+			groupedResults.get(key)!.push(result);
+		}
 
 		console.log(`
-╭─────────────────────────────────────────────────────────────────╮
-│ RUN: ${runId.padEnd(56)} │
-├─────────────────────────────────────────────────────────────────┤
-│ Started:    ${run.startedAt.padEnd(49)} │
-│ Completed:  ${(run.completedAt ?? "N/A").padEnd(49)} │
-│ Benchmarks: ${run.benchmarks.padEnd(49)} │
-│ Providers:  ${run.providers.padEnd(49)} │
-╰─────────────────────────────────────────────────────────────────╯
+╭─────────────────────────────────────────────────────────────────────────────╮
+│ RUN: ${runId.padEnd(69)} │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Started:    ${run.startedAt.padEnd(62)} │
+│ Completed:  ${(run.completedAt ?? "N/A").padEnd(62)} │
+│ Benchmarks: ${run.benchmarks.padEnd(62)} │
+│ Providers:  ${run.providers.padEnd(62)} │
+╰─────────────────────────────────────────────────────────────────────────────╯
 `);
 
-		if (metrics.length > 0) {
-			console.log("Results:");
-			console.log("─".repeat(60));
+		if (groupedResults.size > 0) {
+			console.log("Results (computed via registry):");
+			console.log("─".repeat(75));
 
-			for (const m of metrics) {
-				console.log(
-					`  ${m.benchmark} × ${m.provider}: ${(m.accuracy * 100).toFixed(1)}% (${m.correctItems}/${m.totalItems})`,
+			for (const [key, results] of groupedResults) {
+				const [benchmark, provider] = key.split("|");
+				console.log(`\n  ${benchmark} × ${provider} (${results.length} items):`);
+
+				// Compute metrics using the registry
+				const computedMetrics = metricRegistry.computeAll(
+					requestedMetrics,
+					results,
 				);
 
-				// Show breakdown by question type/category if requested
-				if (options.breakdown) {
-					const byType = resultsStore.getMetricsByQuestionType(
-						runId,
-						m.benchmark,
-						m.provider,
-					);
-					const byCategory = resultsStore.getMetricsByCategory(
-						runId,
-						m.benchmark,
-						m.provider,
-					);
+				for (const metric of computedMetrics) {
+					const displayValue =
+						metric.name.includes("accuracy") ||
+						metric.name.includes("recall") ||
+						metric.name.includes("precision") ||
+						metric.name === "mrr"
+							? `${(metric.value * 100).toFixed(1)}%`
+							: metric.value.toFixed(4);
+					console.log(`    ${metric.name}: ${displayValue}`);
 
-					if (Object.keys(byType).length > 0) {
-						console.log("    By Question Type:");
-						for (const [type, data] of Object.entries(byType)) {
-							console.log(
-								`      ${type}: ${(data.accuracy * 100).toFixed(1)}% (${data.correct}/${data.total})`,
-							);
-						}
-					}
-
-					if (Object.keys(byCategory).length > 0) {
-						console.log("    By Category:");
-						for (const [cat, data] of Object.entries(byCategory)) {
-							console.log(
-								`      ${cat}: ${(data.accuracy * 100).toFixed(1)}% (${data.correct}/${data.total})`,
-							);
+					// Show details if present and breakdown is requested
+					if (
+						options.breakdown &&
+						metric.details &&
+						Object.keys(metric.details).length > 0
+					) {
+						for (const [detailKey, detailVal] of Object.entries(
+							metric.details,
+						)) {
+							let detailValue: string;
+							if (typeof detailVal === "number") {
+								// Only format as percentage if it's a ratio (0-1) and key suggests it's a rate
+								const isRatio = detailVal >= 0 && detailVal <= 1;
+								const isRatioKey = /accuracy|precision|recall|f1|rate|ratio|score/i.test(detailKey);
+								if (isRatio && isRatioKey) {
+									detailValue = `${(detailVal * 100).toFixed(1)}%`;
+								} else {
+									detailValue = detailVal % 1 === 0 ? detailVal.toString() : detailVal.toFixed(4);
+								}
+							} else {
+								detailValue = String(detailVal);
+							}
+							console.log(`      └─ ${detailKey}: ${detailValue}`);
 						}
 					}
 				}

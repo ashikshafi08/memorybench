@@ -213,7 +213,21 @@ export class ResultsStore {
 	getRunResults(runId: string): EvalResult[] {
 		const rows = this.db
 			.query<StoredResult, [string]>(
-				`SELECT * FROM results WHERE run_id = ?`,
+				`SELECT 
+					id,
+					run_id as runId,
+					benchmark,
+					provider,
+					item_id as itemId,
+					question,
+					expected,
+					actual,
+					score,
+					correct,
+					retrieved_context as retrievedContext,
+					metadata,
+					created_at as createdAt
+				FROM results WHERE run_id = ?`,
 			)
 			.all(runId);
 

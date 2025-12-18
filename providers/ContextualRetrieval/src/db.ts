@@ -1,11 +1,18 @@
 import { sql } from "bun";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Chunk, ChunkWithEmbedding, Document } from "./types.ts";
+
+// Get the directory of this module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize database by creating tables
 export async function initDatabase() {
 	try {
-		// Read and execute schema
-		const schemaFile = Bun.file("./schema.sql");
+		// Read and execute schema - path relative to this module
+		const schemaPath = join(__dirname, "../schema.sql");
+		const schemaFile = Bun.file(schemaPath);
 		const schema = await schemaFile.text();
 
 		// Split by statements and execute each one
@@ -18,9 +25,9 @@ export async function initDatabase() {
 			await sql.unsafe(statement);
 		}
 
-		console.log("Database initialized successfully");
+		console.log("ContextualRetrieval database initialized successfully");
 	} catch (error) {
-		console.error("Failed to initialize database:", error);
+		console.error("Failed to initialize ContextualRetrieval database:", error);
 		throw error;
 	}
 }

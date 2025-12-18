@@ -38,10 +38,23 @@ search:
   includeChunks: false
 
 evaluation:
-  method: exact-match
+  method: llm-judge
+  
+  # Judge model configuration
+  judge:
+    model: "openrouter/openai/gpt-4o-mini"
+    temperature: 0
+  
+  # Answering model configuration (used to generate answers from retrieved context)
+  answeringModel:
+    model: "openrouter/openai/gpt-4o-mini"
+    temperature: 0
 
 metrics:
   - accuracy
+  - f1
+  - recall_at_5
+  - success_at_5
 
 runtime:
   checkpointing: true
