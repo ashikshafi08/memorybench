@@ -1,3 +1,16 @@
+/**
+ * Legacy template types for backwards compatibility.
+ *
+ * @deprecated Use the new adapter system in providers/adapters/ and types from core/config.ts.
+ *
+ * New providers should:
+ * 1. Create a YAML config in providers/configs/
+ * 2. Implement a TypeScript adapter extending LocalProvider (providers/base/local-provider.ts)
+ * 3. Register the adapter in providers/factory.ts
+ *
+ * See providers/adapters/aqrag.ts for an example.
+ */
+
 import type { BenchmarkRegistry, BenchmarkType } from "../../benchmarks";
 
 const mockSearchFunction = async (_query: string) => {
@@ -10,6 +23,10 @@ const mockSearchFunction = async (_query: string) => {
 	];
 };
 
+/**
+ * @deprecated Use PreparedData from core/config.ts instead.
+ * Note: The new PreparedData uses `content` instead of `context`.
+ */
 export interface PreparedData {
 	context: string;
 	metadata: Record<string, unknown>;
@@ -23,6 +40,9 @@ export type BenchmarkProcessors = {
 	[K in BenchmarkType]?: BenchmarkProcessor<K>;
 };
 
+/**
+ * @deprecated Use LocalProvider from providers/base/local-provider.ts instead.
+ */
 const templateType = {
 	name: "Template repository",
 	addContext: async (data: PreparedData) => {

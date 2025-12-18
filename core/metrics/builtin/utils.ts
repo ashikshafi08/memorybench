@@ -78,14 +78,16 @@ export function lcsLength(a: string[], b: string[]): number {
 
 	for (let i = 1; i <= n; i++) {
 		for (let j = 1; j <= m; j++) {
-			if (longer[i - 1] === shorter[j - 1]) {
-				curr[j] = prev[j - 1] + 1;
+			const longerItem = longer[i - 1];
+			const shorterItem = shorter[j - 1];
+			if (longerItem === shorterItem) {
+				curr[j] = (prev[j - 1] ?? 0) + 1;
 			} else {
-				curr[j] = Math.max(prev[j], curr[j - 1]);
+				curr[j] = Math.max(prev[j] ?? 0, curr[j - 1] ?? 0);
 			}
 		}
 		[prev, curr] = [curr, prev];
 	}
 
-	return prev[m];
+	return prev[m] ?? 0;
 }
