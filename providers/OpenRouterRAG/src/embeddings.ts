@@ -1,15 +1,22 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { embedMany } from "ai";
 
+const openrouter = createOpenRouter({
+	apiKey: process.env.OPENROUTER_API_KEY,
+});
+
 /**
- * Generate embeddings using OpenAI's text-embedding-3-small model
+ * Generate embeddings using OpenRouter's text-embedding-3-small model
  * @param texts - Array of texts to embed
  * @returns Array of embedding vectors
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
 	try {
+		// OpenRouter supports embeddings but the SDK types may not include textEmbeddingModel
+		// Use type assertion to access the embedding model method
+		const provider = openrouter as any;
 		const { embeddings } = await embedMany({
-			model: openai.textEmbeddingModel("text-embedding-3-small"),
+			model: provider.textEmbeddingModel("openai/text-embedding-3-small"),
 			values: texts,
 		});
 
