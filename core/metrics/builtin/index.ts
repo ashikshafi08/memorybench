@@ -11,6 +11,7 @@
  * - recall_at_5, recall_at_10
  *
  * ## Retrieval Metrics (for pure retrieval benchmarks)
+ * - ndcg_at_5, ndcg_at_10 (Normalized Discounted Cumulative Gain)
  * - mrr (Mean Reciprocal Rank)
  * - precision_at_5, precision_at_10
  *
@@ -26,6 +27,7 @@ export * from "./abstention-accuracy.ts";
 export * from "./recall.ts";
 export * from "./precision.ts";
 export * from "./mrr.ts";
+export * from "./ndcg.ts";
 export * from "./avg-retrieval-score.ts";
 export * from "./latency.ts";
 export * from "./success.ts";
@@ -40,6 +42,7 @@ import { AbstentionAccuracyMetric } from "./abstention-accuracy.ts";
 import { RecallAt5Metric, RecallAt10Metric } from "./recall.ts";
 import { PrecisionAt5Metric, PrecisionAt10Metric } from "./precision.ts";
 import { MRRMetric } from "./mrr.ts";
+import { NDCGAt5Metric, NDCGAt10Metric } from "./ndcg.ts";
 import { AvgRetrievalScoreMetric } from "./avg-retrieval-score.ts";
 import {
 	AvgSearchLatencyMetric,
@@ -74,6 +77,8 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 		new RecallAt10Metric(),
 
 		// === Retrieval Metrics (for pure retrieval benchmarks) ===
+		new NDCGAt5Metric(),
+		new NDCGAt10Metric(),
 		new PrecisionAt5Metric(),
 		new PrecisionAt10Metric(),
 		new MRRMetric(),
