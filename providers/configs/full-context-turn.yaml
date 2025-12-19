@@ -1,0 +1,15 @@
+name: full-context-turn
+displayName: "Full-Context (Turn)"
+description: "Baseline provider that returns all turns without retrieval"
+type: local
+adapter: "./adapters/full-context.ts"
+tags:
+  - baseline
+  - full-context
+
+capabilities:
+  supportsChunks: false
+  supportsBatch: false
+  supportsMetadata: true
+  supportsRerank: false
+

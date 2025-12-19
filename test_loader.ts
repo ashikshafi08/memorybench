@@ -17,7 +17,7 @@ console.log("\n=== LOADED DATA ===");
 console.log("Total items:", items.length);
 
 if (items.length > 0) {
-  const item = items[0];
+  const item = items[0]!;
   console.log("\nFirst item:");
   console.log("ID:", item.id);
   console.log("Question:", item.question);
@@ -26,8 +26,9 @@ if (items.length > 0) {
   console.log("Metadata:", item.metadata);
   
   if (item.contexts.length > 0) {
+    const firstContext = item.contexts[0]!;
     console.log("\nFirst context:");
-    console.log("ID:", item.contexts[0].id);
-    console.log("Content preview:", item.contexts[0].content.substring(0, 200));
+    console.log("ID:", firstContext.id);
+    console.log("Content preview:", firstContext.content.substring(0, 200));
   }
 }

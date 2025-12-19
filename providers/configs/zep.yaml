@@ -1,61 +1,61 @@
-name: mem0
-displayName: "Mem0"
-description: "Universal memory layer for AI agents"
+name: zep
+displayName: "Zep"
+description: "Context engineering platform for AI agents with Graph RAG"
 type: hosted
 tags:
   - hosted
   - production
-  - memory-layer
+  - graph-rag
+  - context-engineering
 
 connection:
-  baseUrl: "${MEM0_API_URL:-https://api.mem0.ai}"
+  baseUrl: "${ZEP_API_URL:-https://api.getzep.com}"
   timeout: 30000
 
 auth:
   type: bearer
   header: "Authorization"
-  envVar: "MEM0_API_KEY"
+  prefix: "Api-Key "
+  envVar: "ZEP_API_KEY"
 
 scoping:
-  strategy: userId
+  strategy: sessionId
   runIdFormat: "${benchmarkId}-${runId}"
 
 endpoints:
   add:
     method: POST
-    path: /v1/memories/
+    path: /api/v2/sessions/${sessionId}/memory
     body:
       messages:
         - role: "user"
+          role_type: "user"
           content: "$.content"
-      user_id: "$.runTag"
       metadata:
         benchmarkId: "$.metadata.benchmarkId"
         itemId: "$.metadata.itemId"
 
   search:
     method: POST
-    path: /v2/memories/search/
+    path: /api/v2/sessions/${sessionId}/search
     body:
-      query: "$.query"
-      user_id: "$.runTag"
+      text: "$.query"
+      search_type: "similarity"
       limit: 10
     response:
       results: "$.results"
-      contentField: "$.memory"
+      contentField: "$.message.content"
       scoreField: "$.score"
 
   clear:
     method: DELETE
-    path: /v1/memories/
-    body:
-      user_id: "$.runTag"
+    path: /api/v2/sessions/${sessionId}/memory
 
 capabilities:
-  supportsChunks: false
-  supportsBatch: true
+  supportsChunks: true
+  supportsBatch: false
   supportsMetadata: true
-  supportsRerank: false
+  supportsRerank: true
 
 rateLimit:
   addDelayMs: 100

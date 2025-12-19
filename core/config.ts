@@ -261,6 +261,9 @@ export const BenchmarkConfigSchema = z.object({
 	paper: z.string().optional(),
 	tags: z.array(z.string()).optional(),
 
+	// Pack versioning (optional - if not specified, uses latest pack for benchmark)
+	packId: z.string().optional(),
+
 	// Data source
 	data: DataSourceSchema,
 

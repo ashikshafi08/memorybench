@@ -1,4 +1,4 @@
-import type { LoCoMoBenchmarkItem } from "./LoCoMo/types";
+import type { LoCoMoBenchmarkItem } from "../core/types/locomo";
 import type { RAGBenchmarkItem } from "./RAG-template-benchmark/types";
 
 export interface BenchmarkRegistry {

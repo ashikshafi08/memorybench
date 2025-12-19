@@ -1,0 +1,236 @@
+/**
+ * LoCoMo Benchmark Pack
+ * 
+ * Paper-faithful implementation matching locomo/task_eval/evaluation.py
+ * and locomo/task_eval/gpt_utils.py
+ * 
+ * Pack ID: locomo@paper-v1
+ */
+
+import { generateText } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import type { BenchmarkPack, PackId, PromptArtifact, RunConfig, PackEvaluationResult } from "./interface.ts";
+import type { BenchmarkItem, SearchResult } from "../../core/config.ts";
+import { createPromptArtifact } from "./utils.ts";
+import {
+	porterStem,
+	normalizeLocomoAnswer,
+	locomoTokens,
+	locomoF1Score,
+	locomoMultiAnswerF1,
+	stripLocomoDialogIdPrefix,
+} from "../evaluators/llm-judge.ts";
+
+const PACK_ID: PackId = "locomo@paper-v1";
+
+/**
+ * Get model provider for a model string (matches llm-judge.ts logic)
+ */
+function getModelProvider(modelString: string): Parameters<typeof generateText>[0]["model"] {
+	const [provider, ...modelParts] = modelString.split("/");
+	const model = modelParts.join("/") || modelString;
+
+	switch (provider) {
+		case "anthropic":
+			return anthropic(model);
+		case "openai":
+			return openai(model);
+		case "openrouter": {
+			const openrouter = createOpenRouter({
+				apiKey: process.env.OPENROUTER_API_KEY,
+			});
+			return openrouter.chat(model) as unknown as Parameters<typeof generateText>[0]["model"];
+		}
+		default:
+			if (modelString.includes("gpt")) {
+				return openai(modelString);
+			}
+			if (modelString.includes("claude")) {
+				return anthropic(modelString);
+			}
+			return openai(modelString);
+	}
+}
+
+/**
+ * Interpolate template variables in a prompt.
+ */
+function interpolatePrompt(template: string, variables: Record<string, unknown>): string {
+	return template.replace(/\$\{(\w+)\}/g, (_, key) => {
+		const value = variables[key];
+		return value !== undefined ? String(value) : "";
+	});
+}
+
+/**
+ * Build LoCoMo answer prompt.
+ * Matches locomo/task_eval/gpt_utils.py QA_PROMPT and QA_PROMPT_CAT_5
+ */
+function buildLocomoAnswerPrompt(
+	item: BenchmarkItem,
+	retrieved: SearchResult[],
+	run: RunConfig,
+): string {
+	const categoryId = item.metadata?.categoryId as number | undefined;
+	const questionType = item.questionType || String(categoryId);
+	
+	// Build retrieved context (strip dialog ID prefixes)
+	const retrievedContext = retrieved
+		.map((r) => stripLocomoDialogIdPrefix(r.content))
+		.join("\n");
+	
+	// Category 5 (Adversarial) uses different prompt
+	if (categoryId === 5) {
+		const template = `${retrievedContext}
+
+Based on the above context, answer the following question.
+
+Question: ${item.question} Short answer:`;
+		return template;
+	}
+	
+	// Default QA prompt for categories 1-4
+	const template = `${retrievedContext}
+
+Based on the above context, write an answer in the form of a short phrase for the following question. Answer with exact words from the context whenever possible.
+
+Question: ${item.question} Short answer:`;
+	
+	return template;
+}
+
+/**
+ * LoCoMo Benchmark Pack
+ */
+export const locomoPack: BenchmarkPack = {
+	benchmarkName: "locomo",
+	packId: PACK_ID,
+	sealedSemantics: {
+		prompts: true,
+		scoring: true,
+		relevance: true,
+	},
+
+	buildAnswerPrompt({ item, retrieved, run }): PromptArtifact {
+		const prompt = buildLocomoAnswerPrompt(item, retrieved, run);
+		return createPromptArtifact(prompt);
+	},
+
+	async evaluate({ item, retrieved, run }): Promise<PackEvaluationResult> {
+		// Build answer prompt
+		const answerPromptArtifact = this.buildAnswerPrompt({ item, retrieved, run });
+		
+		// Get answering model
+		const answeringModel = run.answeringModel || "openrouter/openai/gpt-5-nano";
+		const model = getModelProvider(answeringModel);
+		
+		// Generate answer
+		const { text: answer } = await generateText({
+			model,
+			prompt: answerPromptArtifact.text,
+			temperature: 0,
+		});
+		
+		const trimmedAnswer = answer.trim();
+		
+		// Category-aware scoring (LoCoMo evaluation.py)
+		const categoryId = item.metadata?.categoryId as number | undefined;
+		
+		let score = 0;
+		if (categoryId !== undefined && !Number.isNaN(categoryId)) {
+			if (categoryId === 3) {
+				// Category 3: use first segment before ';'
+				const gt = (item.answer ?? "").split(";")[0]?.trim() ?? "";
+				score = locomoF1Score(trimmedAnswer, gt);
+			} else if ([2, 4].includes(categoryId)) {
+				score = locomoF1Score(trimmedAnswer, item.answer ?? "");
+			} else if (categoryId === 1) {
+				// Multi-answer F1 for category 1
+				score = locomoMultiAnswerF1(trimmedAnswer, item.answer ?? "");
+			} else if (categoryId === 5) {
+				// Adversarial: check for abstention phrases
+				const lower = trimmedAnswer.toLowerCase();
+				score = (lower.includes("no information available") || lower.includes("not mentioned")) ? 1 : 0;
+			} else {
+				score = locomoF1Score(trimmedAnswer, item.answer ?? "");
+			}
+		} else {
+			// Fallback: token-F1 without category info
+			score = locomoF1Score(trimmedAnswer, item.answer ?? "");
+		}
+		
+		const correct = score >= 0.5;
+		
+		return {
+			answer: trimmedAnswer,
+			score,
+			correct,
+			judgeResponse: JSON.stringify({
+				method: "locomo-qa",
+				categoryId: categoryId !== undefined ? categoryId : undefined,
+				score,
+			}, null, 2),
+		};
+	},
+
+	isRelevant({ item, result }): boolean {
+		// LoCoMo relevance is determined by qa.evidence dialog IDs
+		// Check if result's ID or metadata matches evidence IDs from item.metadata.evidence
+		const evidence = item.metadata?.evidence;
+		if (!evidence) {
+			// No evidence labels available, cannot determine relevance
+			return false;
+		}
+		
+		// Evidence can be a single ID or array of IDs (dia_id format like "D1:3")
+		const evidenceIds = Array.isArray(evidence) ? evidence : [evidence];
+		const evidenceIdSet = new Set(evidenceIds.map((id) => String(id).trim()).filter(Boolean));
+
+		// Collect dialog IDs for this retrieved result (exact matching; no substring heuristics).
+		const resultDialogIds = new Set<string>();
+
+		// Tier 1: provider preserved metadata
+		const metaDialogIds = result.metadata?.dialogIds;
+		if (Array.isArray(metaDialogIds)) {
+			for (const id of metaDialogIds) {
+				if (typeof id === "string" && id.trim()) resultDialogIds.add(id.trim());
+			}
+		}
+		const singleMetaId = result.metadata?.dialogId ?? result.metadata?.dia_id;
+		if (typeof singleMetaId === "string" && singleMetaId.trim()) {
+			resultDialogIds.add(singleMetaId.trim());
+		}
+
+		// Tier 2: CTXID prefix embedded in content
+		// Format: [CTXID:D1:3,D1:4] ...
+		const ctxid = /^\[CTXID:([^\]]+)\]\s*/.exec(result.content)?.[1];
+		if (ctxid) {
+			for (const id of ctxid.split(",").map((s) => s.trim()).filter(Boolean)) {
+				resultDialogIds.add(id);
+			}
+		}
+
+		// Last resort: parse dialog IDs from result.id (stable IDs may embed dia_id)
+		const idMatches = result.id.match(/D\d+:\d+/g);
+		if (idMatches) {
+			for (const id of idMatches) resultDialogIds.add(id);
+		}
+
+		// Also attempt to parse from content if the provider returns dia_id prefixes
+		const contentMatches = result.content.match(/D\d+:\d+/g);
+		if (contentMatches) {
+			for (const id of contentMatches) resultDialogIds.add(id);
+		}
+
+		for (const evidenceId of evidenceIdSet) {
+			if (resultDialogIds.has(evidenceId)) {
+				return true;
+			}
+		}
+
+		return false;
+	},
+};
+

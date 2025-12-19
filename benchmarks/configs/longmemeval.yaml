@@ -2,6 +2,7 @@ name: longmemeval
 displayName: "LongMemEval"
 description: "Multi-session long-term memory evaluation"
 version: "1.0"
+packId: "longmemeval@paper-v1"
 source: "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned"
 paper: "https://arxiv.org/abs/2410.10813"
 tags:
@@ -64,70 +65,13 @@ search:
   includeChunks: true
 
 evaluation:
-  method: llm-judge
-  
   answeringModel:
     model: "openrouter/openai/gpt-5-nano"
     temperature: 0
-  
-  answerPrompt:
-    default: |
-      You are a question-answering system. Based on the retrieved context below, answer the question.
-      
-      Question: ${question}
-      Question Date: ${questionDate}
-      
-      Retrieved Context:
-      ${retrievedContext}
-      
-      Instructions:
-      - Identify which parts of the context are relevant to answering the question
-      - Consider temporal relationships, sequences of events, and any updates to information
-      - If the context contains enough information, provide a clear, concise answer
-      - If the context does not contain enough information, respond with "I don't know"
-      - Base your answer ONLY on the provided context
-      
-      Answer:
-    userOverride: true
-  
+
   judge:
     model: "openrouter/openai/gpt-5-nano"
     temperature: 0
-  
-  judgePrompts:
-    source: "paper"
-    paperReference: "LongMemEval (arXiv:2410.10813) Section 4.2, Figure 10"
-    userOverride: true
-    
-    default: |
-      I will give you a question, a correct answer, and a response from a model.
-      Please answer yes if the response contains the correct answer. Otherwise, answer no.
-      If the response is equivalent to the correct answer or contains all the intermediate
-      steps to get the correct answer, you should also answer yes.
-      If the response only contains a subset of the information required, answer no.
-    
-    byQuestionType:
-      temporal-reasoning: |
-        I will give you a question, a correct answer, and a response from a model.
-        Please answer yes if the response contains the correct answer. Otherwise, answer no.
-        If the response is equivalent to the correct answer or contains all the intermediate
-        steps to get the correct answer, you should also answer yes.
-        If the response only contains a subset of the information required, answer no.
-        In addition, do not penalize off-by-one errors for the number of days.
-        If the question asks for days/weeks/months and the model makes off-by-one errors
-        (e.g., predicting 19 days when the answer is 18), the response is still correct.
-      
-      knowledge-update: |
-        I will give you a question, a correct answer, and a response from a model.
-        Please answer yes if the response contains the correct answer. Otherwise, answer no.
-        If the response contains some previous information along with an updated answer,
-        the response should be considered correct as long as the updated answer is correct.
-      
-      single-session-preference: |
-        I will give you a question, a rubric for desired personalized response, and a response.
-        Please answer yes if the response satisfies the desired response. Otherwise, answer no.
-        The model does not need to reflect all points in the rubric. The response is correct
-        as long as it recalls and utilizes the user's personal information correctly.
 
 metrics:
   - accuracy

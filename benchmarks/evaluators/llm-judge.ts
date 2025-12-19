@@ -656,3 +656,16 @@ export async function evaluate(
 	}
 }
 
+// ---------------------------------------------------------------------------
+// LoCoMo helpers (exported for paper-faithful packs + label-grounded metrics)
+// ---------------------------------------------------------------------------
+
+export {
+	porterStem,
+	normalizeLocomoAnswer,
+	locomoTokens,
+	locomoF1Score,
+	locomoMultiAnswerF1,
+	stripLocomoDialogIdPrefix,
+};
+

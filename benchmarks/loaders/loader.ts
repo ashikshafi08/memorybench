@@ -154,6 +154,19 @@ function mapSingleItem(
 		}
 	}
 
+	// LongMemEval: attach dataset-native relevance labels for retrieval metrics.
+	// The official retrieval evaluation treats any corpus_id containing "answer" as relevant.
+	if (config.name === "longmemeval") {
+		const corpusIds = contexts
+			.map((c) => c.metadata?.corpusId)
+			.filter((x): x is string => typeof x === "string");
+		const answerCorpusIds = corpusIds.filter((cid) => cid.includes("answer"));
+		metadata.corpusIds = corpusIds;
+		metadata.answerCorpusIds = answerCorpusIds;
+		metadata.hasRelevanceLabels = answerCorpusIds.length > 0;
+		metadata.isAbstention = String(id).includes("_abs");
+	}
+
 	// Determine question type if available
 	const questionType = metadata.questionType as string | undefined;
 
@@ -286,18 +299,51 @@ function extractContexts(
 				? (getField(raw, contextConfig.dateField) as string[] | undefined)
 				: undefined;
 
+			// LongMemEval provides stable session IDs alongside sessions.
+			// If present, use these as corpus IDs for label-grounded retrieval metrics.
+			const sessionIds =
+				(getField(raw, "haystack_session_ids") as string[] | undefined) ??
+				(getField(raw, "haystack_session_ids".replace(/-/g, "_")) as string[] | undefined);
+
 			for (let i = 0; i < contextData.length; i++) {
 				const item = contextData[i];
 				const date = dates?.[i];
 
 				const content = formatContextItem(item, contextConfig.itemSchema, date, ingestion?.preprocessing?.formatTemplate);
 
+				// Extract stable corpus ID if available (LongMemEval style)
+				// LongMemEval uses session_id and turn IDs like "session_1", "session_1_1"
+				let corpusId: string | undefined;
+				// Prefer explicit session IDs array if present
+				const sessionId = sessionIds?.[i];
+				if (sessionId) {
+					corpusId = sessionId;
+				}
+				if (typeof item === "object" && item !== null) {
+					const itemObj = item as Record<string, unknown>;
+					// Try common corpus ID fields
+					corpusId =
+						corpusId ||
+						(itemObj.session_id as string | undefined) ||
+						(itemObj.corpus_id as string | undefined) ||
+						(itemObj.id as string | undefined);
+				}
+				
+				// Generate stable ID: prefer corpus ID, fallback to index-based
+				const stableId = corpusId 
+					? `${itemId}-${corpusId}` 
+					: `${itemId}-ctx-${i}`;
+
 				contexts.push({
-					id: `${itemId}-ctx-${i}`,
+					id: stableId,
 					content,
 					metadata: {
 						index: i,
 						date,
+						corpusId: corpusId || `${itemId}-ctx-${i}`,
+						// Embed CTXID prefix in content for providers that don't preserve metadata (Tier 2 fallback)
+						// Format: [CTXID:corpusId] content
+						...(corpusId ? { _ctxtIdPrefix: `[CTXID:${corpusId}]` } : {}),
 					},
 				});
 			}
@@ -335,12 +381,34 @@ function extractContexts(
 
 				const content = formatContextItem(value, contextConfig.itemSchema, date, ingestion?.preprocessing?.formatTemplate);
 
+				// Extract dialog IDs for LoCoMo (dia_id field in dialog items)
+				let dialogIds: string[] = [];
+				if (Array.isArray(value)) {
+					for (const dialog of value) {
+						if (typeof dialog === "object" && dialog !== null) {
+							const dialogObj = dialog as Record<string, unknown>;
+							const diaId = dialogObj.dia_id as string | undefined;
+							if (diaId) {
+								dialogIds.push(diaId);
+							}
+						}
+					}
+				}
+
+				// Generate stable ID
+				const stableId = dialogIds.length > 0
+					? `${itemId}-${dialogIds.join("-")}`
+					: `${itemId}-session-${sessionIndex}`;
+
 				contexts.push({
-					id: `${itemId}-session-${sessionIndex}`,
+					id: stableId,
 					content,
 					metadata: {
 						sessionKey: key,
 						date,
+						dialogIds: dialogIds.length > 0 ? dialogIds : undefined,
+						// Embed CTXID prefix for Tier 2 fallback
+						...(dialogIds.length > 0 ? { _ctxtIdPrefix: `[CTXID:${dialogIds.join(",")}]` } : {}),
 					},
 				});
 

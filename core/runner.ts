@@ -95,6 +95,8 @@ export class BenchmarkRunner {
 	 */
 	async run(options: RunOptions): Promise<RunResult> {
 		const runId = options.runId ?? this.generateRunId();
+		// Expose runId for debug instrumentation (best-effort)
+		process.env.MEMORYBENCH_RUN_ID = runId;
 		const concurrency = options.concurrency ?? 10;
 		const limit = pLimit(concurrency);
 
@@ -553,4 +555,3 @@ export class BenchmarkRunner {
 		};
 	}
 }
-

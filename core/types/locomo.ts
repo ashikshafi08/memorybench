@@ -23,4 +23,4 @@ export interface sessionItem {
   query?: string;
 }
 
-export type conversation = Record<string, string | sessionItem[]>;
+export type conversation = Record<string, sessionItem[]>;

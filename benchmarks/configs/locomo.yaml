@@ -2,6 +2,7 @@ name: locomo
 displayName: "LoCoMo"
 description: "Long-form Conversation Memory benchmark"
 version: "1.0"
+packId: "locomo@paper-v1"
 source: "https://github.com/snap-research/locomo"
 paper: "https://arxiv.org/abs/2402.17753"
 tags:
@@ -11,7 +12,7 @@ tags:
 
 data:
   type: local
-  path: "./benchmarks/LoCoMo/locomo10.json"
+  path: "./benchmarks/data/locomo10.json"
   format: json
 
 schema:
@@ -60,28 +61,9 @@ search:
   includeChunks: true
 
 evaluation:
-  method: custom
-  customEvaluator: locomo-qa
-
   answeringModel:
     model: "openrouter/openai/gpt-5-nano"
     temperature: 0
-
-  answerPrompt:
-    default: |
-      ${retrievedContext}
-
-      Based on the above context, write an answer in the form of a short phrase for the following question. Answer with exact words from the context whenever possible.
-
-      Question: ${question} Short answer:
-    byQuestionType:
-      "5": |
-        ${retrievedContext}
-
-        Based on the above context, answer the following question.
-
-        Question: ${question} Short answer:
-    userOverride: true
 
 metrics:
   - accuracy

@@ -11,6 +11,7 @@ import {
 	type ProviderConfig,
 	type BenchmarkConfig,
 } from "./config.ts";
+import { getPackAndValidate } from "./sealed-semantics.ts";
 
 /**
  * Interpolate environment variables in a string.
@@ -123,6 +124,12 @@ export class Registry {
 				const raw = parse(content);
 				const interpolated = interpolateEnvVarsInObject(raw);
 				const config = BenchmarkConfigSchema.parse(interpolated);
+				
+				// Validate sealed semantics (fail fast if pack exists and YAML overrides)
+				// Note: packId from YAML could be in a future "pack" field, but for now
+				// we check if a pack exists for this benchmark name
+				getPackAndValidate(config);
+				
 				this.benchmarks.set(config.name, config);
 			} catch (error) {
 				if (error instanceof ZodError) {
@@ -163,6 +170,15 @@ export class Registry {
 			);
 		}
 		return config;
+	}
+
+	/**
+	 * Get a benchmark pack for a benchmark (if exists).
+	 * Validates sealed semantics.
+	 */
+	getBenchmarkPack(benchmarkName: string, packId?: string): import("../benchmarks/packs/interface.ts").BenchmarkPack | undefined {
+		const config = this.getBenchmark(benchmarkName);
+		return getPackAndValidate(config, packId);
 	}
 
 	/**

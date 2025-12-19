@@ -8,6 +8,7 @@ import { HttpProvider } from "./base/http-provider.ts";
 import { AQRAGAdapter } from "./adapters/aqrag.ts";
 import { ContextualRetrievalAdapter } from "./adapters/contextual-retrieval.ts";
 import { OpenRouterRAGAdapter } from "./adapters/openrouter-rag.ts";
+import { FullContextSessionProvider, FullContextTurnProvider } from "./adapters/full-context.ts";
 
 /**
  * Registry of local provider adapters.
@@ -17,6 +18,11 @@ const localAdapterRegistry = new Map<
 	string,
 	new (config: ProviderConfig) => Provider
 >();
+
+/**
+ * Registry of providers by name (for special cases like full-context baselines).
+ */
+const providerByNameRegistry = new Map<string, new (config: ProviderConfig) => Provider>();
 
 /**
  * Register a local provider adapter.
@@ -32,6 +38,10 @@ export function registerLocalAdapter(
 registerLocalAdapter("./adapters/aqrag.ts", AQRAGAdapter);
 registerLocalAdapter("./adapters/contextual-retrieval.ts", ContextualRetrievalAdapter);
 registerLocalAdapter("./adapters/openrouter-rag.ts", OpenRouterRAGAdapter);
+
+// Register full-context providers by name
+providerByNameRegistry.set("full-context-session", FullContextSessionProvider);
+providerByNameRegistry.set("full-context-turn", FullContextTurnProvider);
 
 /**
  * Create a provider instance from config.
@@ -73,6 +83,16 @@ async function createLocalProvider(config: ProviderConfig): Promise<Provider> {
 	const RegisteredAdapter = localAdapterRegistry.get(config.adapter);
 	if (RegisteredAdapter) {
 		const provider = new RegisteredAdapter(config);
+		if (provider.initialize) {
+			await provider.initialize();
+		}
+		return provider;
+	}
+
+	// Check provider-by-name registry (for special cases like full-context baselines)
+	const ProviderByName = providerByNameRegistry.get(config.name);
+	if (ProviderByName) {
+		const provider = new ProviderByName(config);
 		if (provider.initialize) {
 			await provider.initialize();
 		}

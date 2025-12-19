@@ -6,6 +6,7 @@
 import type { EvalResult } from "../../config.ts";
 import type { MetricCalculator, MetricResult } from "../interface.ts";
 import { tokenize } from "./utils.ts";
+import { getPackRegistry } from "../../../benchmarks/packs/index.ts";
 
 /**
  * Generic Recall@K metric calculator.
@@ -48,52 +49,68 @@ export class RecallAtKMetric implements MetricCalculator {
 			return { name: this.name, value: 0 };
 		}
 
+		// Try to get pack for label-grounded relevance (if available)
+		// Use first result to determine benchmark
+		const firstResult = results[0]!;
+		const benchmarkName = firstResult.benchmark;
+		const packRegistry = getPackRegistry();
+		const pack = packRegistry.getLatest(benchmarkName);
+
 		let totalRecall = 0;
 		let relevantFound = 0;
 		let exactMatchFound = 0;
+		let packRelevantFound = 0;
 
 		for (const result of results) {
 			const retrievedContext = result.retrievedContext.slice(0, this.k);
-			const expectedTokens = tokenize(result.expected);
-			const expectedSet = new Set(expectedTokens);
+			
+			// If pack exists and owns relevance semantics, use pack's isRelevant
+			let hasRelevant = false;
+			if (pack && pack.sealedSemantics.relevance) {
+				// Reconstruct item from result metadata (best effort)
+				const item = {
+					id: result.itemId,
+					question: result.question,
+					answer: result.expected,
+					contexts: [],
+					metadata: result.metadata || {},
+				} as import("../../config.ts").BenchmarkItem;
+				
+				hasRelevant = retrievedContext.some((ctx) => {
+					const isRel = pack.isRelevant({
+						item,
+						result: ctx,
+					});
+					if (isRel) packRelevantFound++;
+					return isRel;
+				});
+			} else {
+				// Fallback to token-based relevance
+				const expectedTokens = tokenize(result.expected);
+				const expectedSet = new Set(expectedTokens);
 
-			// Check if any retrieved context sufficiently covers the expected answer tokens
-			let bestCoverage = 0;
-			let bestOverlap = 0;
-			let bestExpectedSize = expectedSet.size;
+				hasRelevant = retrievedContext.some((ctx) => {
+					// Also check for exact match (for tracking)
+					const exactMatch = ctx.content.toLowerCase().includes(result.expected.toLowerCase());
+					if (exactMatch) exactMatchFound++;
 
-			const hasRelevant = retrievedContext.some((ctx) => {
-				// Also check for exact match (for tracking)
-				const exactMatch = ctx.content.toLowerCase().includes(result.expected.toLowerCase());
-				if (exactMatch) exactMatchFound++;
-
-				if (expectedSet.size === 0) {
-					bestCoverage = 1;
-					bestOverlap = 0;
-					bestExpectedSize = 0;
-					return true;
-				}
-
-				const chunkTokens = tokenize(ctx.content);
-				const found = new Set<string>();
-				for (const t of chunkTokens) {
-					if (expectedSet.has(t)) {
-						found.add(t);
-						if (found.size === expectedSet.size) break;
+					if (expectedSet.size === 0) {
+						return true;
 					}
-				}
 
-				const overlap = found.size;
-				const coverage = overlap / expectedSet.size; // recall of expected tokens
+					const chunkTokens = tokenize(ctx.content);
+					const found = new Set<string>();
+					for (const t of chunkTokens) {
+						if (expectedSet.has(t)) {
+							found.add(t);
+							if (found.size === expectedSet.size) break;
+						}
+					}
 
-				if (coverage > bestCoverage) {
-					bestCoverage = coverage;
-					bestOverlap = overlap;
-					bestExpectedSize = expectedSet.size;
-				}
-
-				return coverage >= this.f1Threshold;
-			});
+					const coverage = found.size / expectedSet.size; // recall of expected tokens
+					return coverage >= this.f1Threshold;
+				});
+			}
 
 			if (hasRelevant) {
 				totalRecall++;
@@ -107,9 +124,11 @@ export class RecallAtKMetric implements MetricCalculator {
 			details: {
 				relevantFound,
 				exactMatchFound,
+				packRelevantFound: pack ? packRelevantFound : undefined,
 				total: results.length,
 				k: this.k,
 				f1Threshold: this.f1Threshold,
+				usesPackRelevance: pack?.sealedSemantics.relevance || false,
 			},
 		};
 	}

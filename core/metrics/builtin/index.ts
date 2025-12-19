@@ -22,6 +22,7 @@ export * from "./utils.ts";
 export * from "./accuracy.ts";
 export * from "./accuracy-by-type.ts";
 export * from "./accuracy-by-category.ts";
+export * from "./abstention-accuracy.ts";
 export * from "./recall.ts";
 export * from "./precision.ts";
 export * from "./mrr.ts";
@@ -35,6 +36,7 @@ export * from "./rouge.ts";
 import { AccuracyMetric } from "./accuracy.ts";
 import { AccuracyByQuestionTypeMetric } from "./accuracy-by-type.ts";
 import { AccuracyByCategoryMetric } from "./accuracy-by-category.ts";
+import { AbstentionAccuracyMetric } from "./abstention-accuracy.ts";
 import { RecallAt5Metric, RecallAt10Metric } from "./recall.ts";
 import { PrecisionAt5Metric, PrecisionAt10Metric } from "./precision.ts";
 import { MRRMetric } from "./mrr.ts";
@@ -60,6 +62,7 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 		new AccuracyMetric(),
 		new AccuracyByQuestionTypeMetric(),
 		new AccuracyByCategoryMetric(),
+		new AbstentionAccuracyMetric(),
 		new F1Metric(),
 		new Bleu1Metric(),
 		new RougeLMetric(),
