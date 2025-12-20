@@ -78,7 +78,8 @@ interface RepoEvalRawTask extends RawTask {
 function createRepoEvalDataset(): DatasetDefinition {
 	const dataDir = () => process.env.REPOEVAL_DATA_DIR || join(DATASETS_BASE_DIR, "repoeval");
 	const datasetsDir = () => join(dataDir(), "datasets");
-	const reposDir = () => join(dataDir(), "repositories", "function_level");
+	// Note: The function_level.zip extracts repos directly to repositories/, not repositories/function_level/
+	const reposDir = () => join(dataDir(), "repositories");
 
 	return {
 		name: "repoeval",

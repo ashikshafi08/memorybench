@@ -110,9 +110,12 @@ async function createLocalProvider(config: ProviderConfig): Promise<Provider> {
 	// Try to dynamically import the adapter
 	try {
 		// Resolve the adapter path relative to the providers directory
-		const adapterPath = config.adapter.startsWith("./")
-			? `./adapters/${config.adapter.slice(2)}`
-			: config.adapter;
+		// If path already contains 'adapters/', use as-is; otherwise prepend it
+		let adapterPath = config.adapter;
+		if (config.adapter.startsWith("./") && !config.adapter.includes("/adapters/")) {
+			// Only prepend adapters if not already present (e.g., "./foo.ts" -> "./adapters/foo.ts")
+			adapterPath = `./adapters/${config.adapter.slice(2)}`;
+		}
 
 		const module = await import(adapterPath);
 

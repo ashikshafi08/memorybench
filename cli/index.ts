@@ -10,6 +10,8 @@ import { BenchmarkRunner, type ProgressCallback, type RunResult } from "../core/
 import { ResultsStore } from "../core/results.ts";
 import { getDefaultRegistry, UnknownMetricError, getAvailableMetrics } from "../core/metrics/index.ts";
 import type { MetricResult } from "../core/metrics/interface.ts";
+import { tableCommand } from "./table.ts";
+import { policyCompareCommand, parsePolicyCompareOptions } from "./policy-compare.ts";
 
 interface ParsedArgs {
 	command: string;
@@ -20,13 +22,19 @@ interface ParsedArgs {
 /**
  * Safely convert an option value to a string array.
  * Filters out boolean values and wraps single strings in an array.
+ * Splits comma-separated values (e.g., "a,b,c" → ["a", "b", "c"]).
  */
 function toStringArray(
 	value: string | string[] | boolean | undefined,
 ): string[] | undefined {
 	if (value === undefined || value === true) return undefined;
 	if (value === false) return undefined;
-	return Array.isArray(value) ? value : [value];
+	if (Array.isArray(value)) {
+		// Flatten any comma-separated values within the array
+		return value.flatMap((v) => v.split(",").map((s) => s.trim())).filter(Boolean);
+	}
+	// Split single string on commas
+	return value.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
 /**
@@ -193,7 +201,9 @@ Commands:
   describe <name>   Describe a specific benchmark or provider
   download          Download benchmark datasets
   eval              Run evaluation
+  eval:policy       Run policy comparison (1-hop vs H-hop)
   results <runId>   View results for a run
+  table             Generate comparison table from results
   export <runId>    Export results to file
   help              Show this help message
 
@@ -203,6 +213,7 @@ Examples:
   memorybench describe longmemeval
   memorybench eval --benchmarks longmemeval --providers supermemory --limit 10
   memorybench eval --benchmarks rag-template --providers supermemory --metrics accuracy f1 recall_at_5
+  memorybench table --run <runId> --benchmark repoeval
   memorybench results run-20251216-123456-abc1
   memorybench export run-20251216-123456-abc1 --format csv --output results.csv
 
@@ -470,6 +481,10 @@ async function evalCommand(
 	const runId = options["run-id"] as string | undefined;
 	const outputDir = (options.output as string) ?? "./results";
 	const metrics = toStringArray(options.metrics);
+	
+	// Parse policy option (1-hop or H-hop)
+	const policyStr = (options.policy as string)?.toLowerCase();
+	const policy = policyStr === "h-hop" ? "H-hop" : "1-hop";
 
 	// Validate metrics if provided
 	if (metrics && metrics.length > 0) {
@@ -513,6 +528,7 @@ async function evalCommand(
 ├─────────────────────────────────────────────────────────────────┤
 │ Benchmarks: ${benchmarks.join(", ").padEnd(49)} │
 │ Providers:  ${providers.join(", ").padEnd(49)} │
+│ Policy:     ${policy.padEnd(49)} │
 │ Started:    ${new Date().toISOString().padEnd(49)} │
 ╰─────────────────────────────────────────────────────────────────╯
 `);
@@ -530,6 +546,7 @@ async function evalCommand(
 			runId,
 			outputDir,
 			metrics,
+			policy,
 		});
 
 		// Clear progress line
@@ -785,6 +802,23 @@ async function main(): Promise<void> {
 				process.exit(1);
 			}
 			await exportCommand(parsed.args[0], parsed.options);
+			break;
+
+		case "table":
+			if (!parsed.args[0] && !parsed.options["run"]) {
+				console.error("\n❌ Please specify a run ID with --run <runId>\n");
+				process.exit(1);
+			}
+			await tableCommand({
+				runId: (parsed.options["run"] as string) ?? parsed.args[0]!,
+				benchmark: parsed.options["benchmark"] as string,
+				baseline: parsed.options["baseline"] as string,
+				dbPath: parsed.options["db"] as string,
+			});
+			break;
+
+		case "eval:policy":
+			await policyCompareCommand(parsePolicyCompareOptions(parsed.options));
 			break;
 
 		default:

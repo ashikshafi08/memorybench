@@ -19,6 +19,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "code-chunk": "file:../code-chunk/packages/code-chunk",
     "@ai-sdk/anthropic": "^2.0.17",
     "@ai-sdk/google": "^2.0.14",
     "@ai-sdk/google-vertex": "^3.0.74",

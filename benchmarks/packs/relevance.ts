@@ -301,7 +301,7 @@ export function isCrossCodeRelevant(
  * - Removes leading slashes
  * - Lowercases for case-insensitive comparison
  */
-function normalizePath(path: string): string {
+export function normalizePath(path: string): string {
 	return path
 		.replace(/\\/g, "/")
 		.replace(/^\/+/, "")
@@ -312,7 +312,7 @@ function normalizePath(path: string): string {
  * Check if two normalized paths match.
  * Supports suffix matching for repo-relative paths.
  */
-function pathMatches(path1: string, path2: string): boolean {
+export function pathMatches(path1: string, path2: string): boolean {
 	// Exact match
 	if (path1 === path2) {
 		return true;

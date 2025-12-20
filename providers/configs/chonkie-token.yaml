@@ -1,0 +1,47 @@
+# Chonkie Token Provider
+#
+# Simple token-count based splitting. Fast and predictable.
+# Good baseline for comparison.
+#
+# Requirements:
+#   Python 3.10+
+#   pip install chonkie
+#
+# Environment:
+#   CHONKIE_PYTHON_PATH - Path to Python with Chonkie installed (default: python3)
+
+name: chonkie-token
+displayName: Chonkie Token
+description: Token-count based chunker via Chonkie Python library
+type: local
+adapter: ./adapters/generic-chunker.ts
+
+tags:
+  - chunking
+  - baseline
+  - chonkie
+  - token
+
+# Scoping for multiple benchmark runs
+scoping:
+  strategy: containerTags
+  runIdFormat: "${benchmarkId}-${runId}"
+
+# Chunking configuration
+local:
+  chunking:
+    size: 512  # Tokens (smaller for token-based)
+    overlap: 50
+    strategy: token
+  
+  # Embedding configuration (defaults to OpenAI)
+  embedding:
+    provider: openai
+    model: text-embedding-3-small
+
+# Capabilities
+capabilities:
+  supportsChunks: true
+  supportsBatch: true
+  supportsMetadata: true
+  supportsRerank: false

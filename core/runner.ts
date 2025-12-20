@@ -15,6 +15,7 @@ import { measureLatency, addTelemetryToMetadata, type ItemTelemetry } from "./te
 import { evaluate as evaluateWithLLM, type EvaluationResult } from "../benchmarks/evaluators/llm-judge.ts";
 import { getPackAndValidate } from "./sealed-semantics.ts";
 import type { BenchmarkPack, RunConfig } from "../benchmarks/packs/interface.ts";
+import { executePolicy, type PolicyType } from "./policies/index.ts";
 
 export interface RunOptions {
 	benchmarks: string[];
@@ -32,6 +33,11 @@ export interface RunOptions {
 	 * Falls back to benchmark YAML `metrics:` if not specified, then to ["accuracy"].
 	 */
 	metrics?: string[];
+	/**
+	 * Retrieval policy: "1-hop" (default) or "H-hop" (multi-hop with query expansion).
+	 * H-hop tests chunker + retrieval synergy by expanding queries based on retrieved content.
+	 */
+	policy?: "1-hop" | "H-hop";
 }
 
 export interface RunResult {
@@ -216,6 +222,7 @@ export class BenchmarkRunner {
 				runTag,
 				providerName,
 				pack,
+				options.policy ?? "1-hop",
 			);
 
 			// Cleanup
@@ -348,6 +355,8 @@ export class BenchmarkRunner {
 	 * 
 	 * If a pack exists and owns scoring semantics (sealedSemantics.scoring === true),
 	 * evaluation is delegated to pack.evaluate(). Otherwise falls back to LLM judge.
+	 * 
+	 * @param policy - Retrieval policy: "1-hop" (single query) or "H-hop" (multi-hop with expansion)
 	 */
 	private async evaluatePhase(
 		provider: Provider,
@@ -356,7 +365,8 @@ export class BenchmarkRunner {
 		runId: string,
 		runTag: string,
 		providerName: string,
-		pack?: BenchmarkPack,
+		pack: BenchmarkPack | undefined,
+		policy: PolicyType,
 	): Promise<EvalResult[]> {
 		const benchmarkName = benchmarkConfig.name;
 		const results: EvalResult[] = [];
@@ -393,14 +403,21 @@ export class BenchmarkRunner {
 				const totalStart = performance.now();
 
 				// Search for relevant context (with timing)
-				const { result: searchResults, latencyMs: searchLatencyMs } =
+				// Use policy-based retrieval: 1-hop (single query) or H-hop (multi-hop expansion)
+				const searchLimit = benchmarkConfig.search?.defaultLimit ?? 10;
+				const searchFn = (q: string, opts: { limit: number }) =>
+					provider.searchQuery(q, runTag, {
+						limit: opts.limit,
+						threshold: benchmarkConfig.search?.defaultThreshold ?? 0.3,
+						includeChunks: benchmarkConfig.search?.includeChunks ?? false,
+					});
+
+				const { result: policyResult, latencyMs: searchLatencyMs } =
 					await measureLatency(() =>
-						provider.searchQuery(item.question, runTag, {
-							limit: benchmarkConfig.search?.defaultLimit ?? 10,
-							threshold: benchmarkConfig.search?.defaultThreshold ?? 0.3,
-							includeChunks: benchmarkConfig.search?.includeChunks ?? false,
-						}),
+						executePolicy(policy, item.question, searchFn, searchLimit),
 					);
+
+				const searchResults = policyResult.results;
 
 				// Evaluate (with timing)
 				// If pack exists and owns scoring, use pack.evaluate(); otherwise use LLM judge
@@ -445,6 +462,8 @@ export class BenchmarkRunner {
 							...item.metadata,
 							questionType: item.questionType,
 							category: item.category,
+							policy,
+							policyStats: policyResult.stats,
 						},
 						telemetry,
 					),

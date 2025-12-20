@@ -14,6 +14,8 @@
  * - ndcg_at_5, ndcg_at_10 (Normalized Discounted Cumulative Gain)
  * - mrr (Mean Reciprocal Rank)
  * - precision_at_5, precision_at_10
+ * - file_recall_at_5, file_recall_at_10 (file-level recall)
+ * - file_mrr (file-level MRR)
  *
  * ## Performance Metrics
  * - avg_search_latency_ms, avg_total_latency_ms, p95_latency_ms
@@ -35,6 +37,7 @@ export * from "./f1.ts";
 export * from "./bleu.ts";
 export * from "./rouge.ts";
 export * from "./file-recall.ts";
+export * from "./file-mrr.ts";
 
 import { AccuracyMetric } from "./accuracy.ts";
 import { AccuracyByQuestionTypeMetric } from "./accuracy-by-type.ts";
@@ -55,6 +58,7 @@ import { F1Metric } from "./f1.ts";
 import { Bleu1Metric } from "./bleu.ts";
 import { RougeLMetric } from "./rouge.ts";
 import { FileRecallAt5Metric, FileRecallAt10Metric } from "./file-recall.ts";
+import { FileMRRMetric } from "./file-mrr.ts";
 import type { MetricCalculator } from "../interface.ts";
 
 /**
@@ -85,9 +89,10 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 		new PrecisionAt10Metric(),
 		new MRRMetric(),
 		new AvgRetrievalScoreMetric(),
-		// File-level recall (for SWE-bench style benchmarks)
+		// File-level metrics (for SWE-bench style benchmarks)
 		new FileRecallAt5Metric(),
 		new FileRecallAt10Metric(),
+		new FileMRRMetric(),
 
 		// === Performance Metrics ===
 		new AvgSearchLatencyMetric(),

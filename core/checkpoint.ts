@@ -18,6 +18,7 @@ export interface CheckpointItem {
 export interface CodeChunkCheckpointItem extends CheckpointItem { 
 
 	codeChunkId: string; 
+	
 }
 
 export interface Checkpoint {
@@ -281,23 +282,31 @@ export class CheckpointManager {
 			checkpoint.provider,
 		);
 
-		// Ensure directory exists before writing
-		await mkdir(dirname(path), { recursive: true });
+		// Ensure directory exists before writing (with retry for race conditions)
+		const dir = dirname(path);
+		for (let attempt = 0; attempt < 3; attempt++) {
+			try {
+				await mkdir(dir, { recursive: true });
+				break;
+			} catch (err: unknown) {
+				if ((err as NodeJS.ErrnoException).code !== "EEXIST" && attempt === 2) {
+					throw err;
+				}
+			}
+		}
 
-		// Write to temp file first, then rename (atomic)
-		const tempPath = `${path}.tmp`;
-		await Bun.write(tempPath, JSON.stringify(checkpoint, null, 2));
-
-		// Rename temp to final
-		const file = Bun.file(tempPath);
-		await Bun.write(path, await file.text());
-
-		// Clean up temp file
+		// Write directly to the final path (Bun.write is atomic on most systems)
+		// Using temp file approach was causing race conditions
 		try {
-			await Bun.file(tempPath).exists() &&
-				(await import("node:fs/promises")).unlink(tempPath);
-		} catch {
-			// Ignore cleanup errors
+			await Bun.write(path, JSON.stringify(checkpoint, null, 2));
+		} catch (err: unknown) {
+			// If write fails due to directory not existing, retry once
+			if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+				await mkdir(dir, { recursive: true });
+				await Bun.write(path, JSON.stringify(checkpoint, null, 2));
+			} else {
+				throw err;
+			}
 		}
 
 		// Update cache

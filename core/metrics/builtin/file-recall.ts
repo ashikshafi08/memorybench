@@ -13,22 +13,7 @@
 
 import type { EvalResult, SearchResult } from "../../config.ts";
 import type { MetricCalculator, MetricResult } from "../interface.ts";
-
-/**
- * Normalize a file path for comparison.
- */
-function normalizePath(path: string): string {
-	return path.replace(/\\/g, "/").replace(/^\/+/, "").toLowerCase();
-}
-
-/**
- * Check if two paths match (exact or suffix match).
- */
-function pathMatches(path1: string, path2: string): boolean {
-	const p1 = normalizePath(path1);
-	const p2 = normalizePath(path2);
-	return p1 === p2 || p1.endsWith(p2) || p2.endsWith(p1);
-}
+import { normalizePath, pathMatches } from "../../../benchmarks/packs/relevance.ts";
 
 /**
  * Generic File Recall@K metric calculator.
