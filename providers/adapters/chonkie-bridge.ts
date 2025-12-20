@@ -30,6 +30,9 @@ export interface ChonkieChunkResult {
 
 /**
  * Chunker type supported by the bridge.
+ * 
+ * NOTE: Only "code" and "recursive" are used for code benchmarking.
+ * semantic/token/sentence are for natural language, not source code.
  */
 export type ChonkieChunkerType = "code" | "recursive";
 

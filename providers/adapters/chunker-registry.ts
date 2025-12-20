@@ -198,96 +198,15 @@ registerChunker({
 	},
 });
 
-/**
- * Chonkie semantic chunker
- * Uses embeddings to find semantic boundaries. Best for coherent chunks.
- */
-registerChunker({
-	name: "chonkie-semantic",
-	preflight: async () => {
-		const { isChonkieAvailable } = await import("./chonkie-bridge.ts");
-		const pythonPath = process.env.CHONKIE_PYTHON_PATH || "python3";
-		if (!(await isChonkieAvailable(pythonPath))) {
-			throw new Error(
-				"Chonkie not available. Install with: pip install chonkie tree-sitter-language-pack",
-			);
-		}
-	},
-	chunkFn: async (content, filepath, config) => {
-		const { callChonkie } = await import("./chonkie-bridge.ts");
-		const chunks = await callChonkie(filepath, content, {
-			chunkerType: "semantic",
-			chunkSize: config.size ?? 1500,
-		});
-		return chunks.map((c: ChonkieChunkResult) => ({
-			content: c.text,
-			startLine: c.startLine,
-			endLine: c.endLine,
-			id: c.id,
-		}));
-	},
-});
-
-/**
- * Chonkie token chunker
- * Simple token-count based splitting. Fast and predictable.
- */
-registerChunker({
-	name: "chonkie-token",
-	preflight: async () => {
-		const { isChonkieAvailable } = await import("./chonkie-bridge.ts");
-		const pythonPath = process.env.CHONKIE_PYTHON_PATH || "python3";
-		if (!(await isChonkieAvailable(pythonPath))) {
-			throw new Error(
-				"Chonkie not available. Install with: pip install chonkie tree-sitter-language-pack",
-			);
-		}
-	},
-	chunkFn: async (content, filepath, config) => {
-		const { callChonkie } = await import("./chonkie-bridge.ts");
-		const chunks = await callChonkie(filepath, content, {
-			chunkerType: "token",
-			chunkSize: config.size ?? 512, // Token-based, smaller default
-			overlap: config.overlap ?? 0,
-		});
-		return chunks.map((c: ChonkieChunkResult) => ({
-			content: c.text,
-			startLine: c.startLine,
-			endLine: c.endLine,
-			id: c.id,
-		}));
-	},
-});
-
-/**
- * Chonkie sentence chunker
- * Respects sentence boundaries for natural language.
- */
-registerChunker({
-	name: "chonkie-sentence",
-	preflight: async () => {
-		const { isChonkieAvailable } = await import("./chonkie-bridge.ts");
-		const pythonPath = process.env.CHONKIE_PYTHON_PATH || "python3";
-		if (!(await isChonkieAvailable(pythonPath))) {
-			throw new Error(
-				"Chonkie not available. Install with: pip install chonkie tree-sitter-language-pack",
-			);
-		}
-	},
-	chunkFn: async (content, filepath, config) => {
-		const { callChonkie } = await import("./chonkie-bridge.ts");
-		const chunks = await callChonkie(filepath, content, {
-			chunkerType: "sentence",
-			chunkSize: config.size ?? 1500,
-		});
-		return chunks.map((c: ChonkieChunkResult) => ({
-			content: c.text,
-			startLine: c.startLine,
-			endLine: c.endLine,
-			id: c.id,
-		}));
-	},
-});
+// ============================================================================
+// NOTE: chonkie-semantic, chonkie-token, chonkie-sentence were removed.
+// These are designed for natural language prose, NOT source code.
+// For code chunking benchmarks, we only need:
+//   - code-chunk-ast (AST-aware)
+//   - code-chunk-fixed (baseline)
+//   - chonkie-code (tree-sitter competitor)
+//   - chonkie-recursive (fallback baseline)
+// ============================================================================
 
 // ============================================================================
 // Helper Functions (moved from code-chunk-fixed.ts)
