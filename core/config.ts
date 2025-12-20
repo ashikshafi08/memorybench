@@ -225,9 +225,12 @@ const JudgePromptsConfigSchema = z.object({
 });
 
 const EvaluationConfigSchema = z.object({
+	// Note: method intentionally has no default to avoid sealed semantics conflicts.
+	// When a pack exists with sealed scoring, method should not be set in YAML.
+	// When no pack exists, runner falls back to "llm-judge" if method is undefined.
 	method: z
 		.enum(["exact-match", "llm-judge", "semantic-similarity", "custom"])
-		.default("llm-judge"),
+		.optional(),
 	answeringModel: z
 		.object({
 			model: z.string().default("gpt-4o"),

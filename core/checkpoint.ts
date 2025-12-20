@@ -14,6 +14,12 @@ export interface CheckpointItem {
 	error?: string;
 }
 
+
+export interface CodeChunkCheckpointItem extends CheckpointItem { 
+
+	codeChunkId: string; 
+}
+
 export interface Checkpoint {
 	runId: string;
 	benchmark: string;

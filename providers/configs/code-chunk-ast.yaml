@@ -1,0 +1,42 @@
+# Code Chunk AST Provider
+#
+# AST-aware semantic chunking using the code-chunk library.
+# Uses tree-sitter parsing to identify semantic boundaries.
+#
+# Requirements:
+#   bun add code-chunk
+
+name: code-chunk-ast
+displayName: Code Chunk AST
+description: AST-aware semantic chunker using code-chunk library
+type: local
+adapter: ./adapters/generic-chunker.ts
+
+tags:
+  - chunking
+  - semantic
+  - ast
+  - code
+
+# Scoping for multiple benchmark runs
+scoping:
+  strategy: containerTags
+  runIdFormat: "${benchmarkId}-${runId}"
+
+# Chunking configuration
+local:
+  chunking:
+    size: 1500  # NWS characters
+    strategy: semantic
+  
+  # Embedding configuration (defaults to OpenAI)
+  embedding:
+    provider: openai
+    model: text-embedding-3-small
+
+# Capabilities
+capabilities:
+  supportsChunks: true
+  supportsBatch: true
+  supportsMetadata: true
+  supportsRerank: false

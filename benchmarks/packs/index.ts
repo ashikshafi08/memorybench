@@ -7,6 +7,17 @@
 import type { BenchmarkPack, PackId } from "./interface.ts";
 import { longMemEvalPack } from "./longmemeval.ts";
 import { locomoPack } from "./locomo.ts";
+// Code retrieval packs (consolidated)
+import {
+	repoEvalPack,
+	repoBenchRPack,
+	crossCodeEvalPack,
+	sweBenchLitePack,
+} from "./generic-code-retrieval-pack.ts";
+
+// Re-export for backward compatibility
+export { repoEvalPack, repoBenchRPack, crossCodeEvalPack, sweBenchLitePack };
+export { createCodeRetrievalPack } from "./generic-code-retrieval-pack.ts";
 
 /**
  * Registry for benchmark packs.
@@ -71,6 +82,10 @@ export function getPackRegistry(): PackRegistry {
 		// Register built-in packs
 		globalPackRegistry.register(longMemEvalPack);
 		globalPackRegistry.register(locomoPack);
+		globalPackRegistry.register(repoEvalPack);
+		globalPackRegistry.register(repoBenchRPack);
+		globalPackRegistry.register(sweBenchLitePack);
+		globalPackRegistry.register(crossCodeEvalPack);
 	}
 	return globalPackRegistry;
 }

@@ -1,0 +1,65 @@
+# RepoBench-R Code Retrieval Benchmark
+#
+# Evaluates code chunking quality on cross-file code completion tasks.
+# Ground truth is the set of cross-file snippets that should be retrieved
+# to complete the code being written.
+#
+# Dataset: RepoBench-R from HuggingFace
+# Source: https://huggingface.co/datasets/tianyang/repobench-r
+#
+# This benchmark uses pack-owned semantics (repobench-r@chunking-v1):
+#   - Relevance: Jaccard similarity ≥ 0.7 to any gold snippet
+#   - Scoring: accuracy@k (1 if any gold snippet retrieved)
+
+name: repobench-r
+displayName: RepoBench-R Code Retrieval
+description: Cross-file code completion retrieval benchmark
+version: "1.0"
+source: https://huggingface.co/datasets/tianyang/repobench-r
+
+tags:
+  - code
+  - retrieval
+  - chunking
+  - true-chunking
+  - cross-file
+
+# Pack versioning - this benchmark uses sealed semantics
+packId: repobench-r@chunking-v1
+
+# Data source
+data:
+  type: huggingface
+  path: tianyang/repobench-r
+  localPath: benchmarks/datasets/repobench-r/python.jsonl
+  format: jsonl
+
+# Schema mapping (for reference - loader handles this)
+schema:
+  itemId: id
+  question: file_context
+  answer: next_line
+
+# Search configuration
+search:
+  defaultLimit: 10
+  defaultThreshold: 0.0
+  includeChunks: false
+
+# Metrics to compute
+# These use pack-grounded relevance (Jaccard similarity)
+metrics:
+  - accuracy
+  - ndcg_at_5
+  - ndcg_at_10
+  - precision_at_5
+  - precision_at_10
+  - recall_at_5
+  - recall_at_10
+  - mrr
+
+# Runtime configuration
+runtime:
+  checkpointing: true
+  checkpointGranularity: item
+  resumable: true

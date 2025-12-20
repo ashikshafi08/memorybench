@@ -5,10 +5,11 @@
 import type { ProviderConfig } from "../core/config.ts";
 import type { Provider } from "./base/types.ts";
 import { HttpProvider } from "./base/http-provider.ts";
-import { AQRAGAdapter } from "./adapters/aqrag.ts";
-import { ContextualRetrievalAdapter } from "./adapters/contextual-retrieval.ts";
 import { OpenRouterRAGAdapter } from "./adapters/openrouter-rag.ts";
 import { FullContextSessionProvider, FullContextTurnProvider } from "./adapters/full-context.ts";
+
+// Generic chunking provider (replaces 4 separate chunker adapters)
+import { GenericChunkerProvider } from "./adapters/generic-chunker.ts";
 
 /**
  * Registry of local provider adapters.
@@ -35,13 +36,20 @@ export function registerLocalAdapter(
 }
 
 // Pre-register known local adapters
-registerLocalAdapter("./adapters/aqrag.ts", AQRAGAdapter);
-registerLocalAdapter("./adapters/contextual-retrieval.ts", ContextualRetrievalAdapter);
 registerLocalAdapter("./adapters/openrouter-rag.ts", OpenRouterRAGAdapter);
+
+// Register generic chunking provider (handles all chunker types via registry)
+registerLocalAdapter("./adapters/generic-chunker.ts", GenericChunkerProvider);
 
 // Register full-context providers by name
 providerByNameRegistry.set("full-context-session", FullContextSessionProvider);
 providerByNameRegistry.set("full-context-turn", FullContextTurnProvider);
+
+// Register chunking providers by name (all use GenericChunkerProvider)
+providerByNameRegistry.set("code-chunk-fixed", GenericChunkerProvider);
+providerByNameRegistry.set("code-chunk-ast", GenericChunkerProvider);
+providerByNameRegistry.set("chonkie-code", GenericChunkerProvider);
+providerByNameRegistry.set("chonkie-recursive", GenericChunkerProvider);
 
 /**
  * Create a provider instance from config.

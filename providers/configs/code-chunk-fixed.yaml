@@ -1,0 +1,39 @@
+# Code Chunk Fixed Provider
+#
+# Baseline chunking using fixed-size character windows with overlap.
+# Does not use AST or semantic boundaries.
+
+name: code-chunk-fixed
+displayName: Code Chunk Fixed
+description: Fixed-size character windowing chunker (baseline)
+type: local
+adapter: ./adapters/generic-chunker.ts
+
+tags:
+  - chunking
+  - baseline
+  - code
+
+# Scoping for multiple benchmark runs
+scoping:
+  strategy: containerTags
+  runIdFormat: "${benchmarkId}-${runId}"
+
+# Chunking configuration
+local:
+  chunking:
+    size: 1024
+    overlap: 96
+    strategy: fixed
+  
+  # Embedding configuration (defaults to OpenAI)
+  embedding:
+    provider: openai
+    model: text-embedding-3-small
+
+# Capabilities
+capabilities:
+  supportsChunks: true
+  supportsBatch: true
+  supportsMetadata: true
+  supportsRerank: false

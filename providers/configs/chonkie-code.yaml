@@ -1,0 +1,46 @@
+# Chonkie Code Provider
+#
+# Tree-sitter based semantic chunking using Chonkie's CodeChunker.
+# Respects code structure (functions, classes, etc.).
+#
+# Requirements:
+#   Python 3.10+
+#   pip install chonkie tree-sitter-language-pack
+#
+# Environment:
+#   CHONKIE_PYTHON_PATH - Path to Python with Chonkie installed (default: python3)
+
+name: chonkie-code
+displayName: Chonkie Code
+description: Tree-sitter semantic chunker via Chonkie Python library
+type: local
+adapter: ./adapters/generic-chunker.ts
+
+tags:
+  - chunking
+  - semantic
+  - chonkie
+  - code
+
+# Scoping for multiple benchmark runs
+scoping:
+  strategy: containerTags
+  runIdFormat: "${benchmarkId}-${runId}"
+
+# Chunking configuration
+local:
+  chunking:
+    size: 1500  # Characters
+    strategy: semantic
+  
+  # Embedding configuration (defaults to OpenAI)
+  embedding:
+    provider: openai
+    model: text-embedding-3-small
+
+# Capabilities
+capabilities:
+  supportsChunks: true
+  supportsBatch: true
+  supportsMetadata: true
+  supportsRerank: false

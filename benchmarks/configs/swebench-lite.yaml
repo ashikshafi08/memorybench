@@ -1,0 +1,70 @@
+# SWE-bench Lite Code Retrieval Benchmark
+#
+# Evaluates code chunking quality on real-world bug fixing tasks.
+# Ground truth is the set of files modified by the patch that fixes the bug.
+#
+# Dataset: SWE-bench Lite (300 curated instances)
+# Source: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Lite
+#
+# This benchmark uses pack-owned semantics (swebench-lite@chunking-v1):
+#   - Relevance: file path matches any file modified by the patch
+#   - Scoring: file_recall@k (fraction of modified files retrieved)
+#
+# Note: This benchmark clones repositories on-demand, which can be slow
+# for the first run. Subsequent runs use cached clones.
+
+name: swebench-lite
+displayName: SWE-bench Lite Code Retrieval
+description: Bug-fixing file retrieval benchmark
+version: "1.0"
+source: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Lite
+paper: "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?"
+
+tags:
+  - code
+  - retrieval
+  - chunking
+  - true-chunking
+  - bug-fixing
+
+# Pack versioning - this benchmark uses sealed semantics
+packId: swebench-lite@chunking-v1
+
+# Data source
+data:
+  type: huggingface
+  path: princeton-nlp/SWE-bench_Lite
+  localPath: benchmarks/datasets/swebench-lite/swebench-lite.json
+  format: json
+
+# Schema mapping (for reference - loader handles this)
+schema:
+  itemId: instance_id
+  question: problem_statement
+  answer: patch
+
+# Search configuration
+search:
+  defaultLimit: 10
+  defaultThreshold: 0.0
+  includeChunks: false
+
+# Metrics to compute
+# Uses pack-grounded relevance (file path matching)
+metrics:
+  - file_recall_at_5
+  - file_recall_at_10
+  - accuracy
+  - ndcg_at_5
+  - ndcg_at_10
+  - precision_at_5
+  - precision_at_10
+  - recall_at_5
+  - recall_at_10
+  - mrr
+
+# Runtime configuration
+runtime:
+  checkpointing: true
+  checkpointGranularity: item
+  resumable: true

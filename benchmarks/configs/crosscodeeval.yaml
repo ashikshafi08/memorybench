@@ -1,0 +1,70 @@
+# CrossCodeEval Code Retrieval Benchmark
+#
+# Evaluates cross-file code completion with dependency awareness.
+# Uses the oracle variant where ground truth is the set of dependency files
+# that are needed to complete the code.
+#
+# Dataset: CrossCodeEval (oracle variant)
+# Source: https://huggingface.co/datasets/Fsoft-AIC/CrossCodeEval
+#
+# This benchmark uses pack-owned semantics (crosscodeeval@chunking-v1):
+#   - Relevance: file path matches any dependency file from the oracle
+#   - Scoring: dependency_coverage (fraction of dependencies retrieved)
+#
+# Corpus strategy: Dataset-contained (uses cross_file_context from dataset)
+
+name: crosscodeeval
+displayName: CrossCodeEval Code Retrieval
+description: Cross-file dependency retrieval benchmark (oracle variant)
+version: "1.0"
+source: https://huggingface.co/datasets/Fsoft-AIC/CrossCodeEval
+
+tags:
+  - code
+  - retrieval
+  - chunking
+  - true-chunking
+  - cross-file
+  - dependencies
+
+# Pack versioning - this benchmark uses sealed semantics
+packId: crosscodeeval@chunking-v1
+
+# Data source
+data:
+  type: huggingface
+  path: Fsoft-AIC/CrossCodeEval
+  localPath: benchmarks/datasets/crosscodeeval/python.jsonl
+  format: jsonl
+
+# Schema mapping (for reference - loader handles this)
+schema:
+  itemId: id
+  question: context
+  answer: completion
+
+# Search configuration
+search:
+  defaultLimit: 10
+  defaultThreshold: 0.0
+  includeChunks: false
+
+# Metrics to compute
+# Uses pack-grounded relevance (dependency file matching)
+metrics:
+  - accuracy
+  - file_recall_at_5
+  - file_recall_at_10
+  - ndcg_at_5
+  - ndcg_at_10
+  - precision_at_5
+  - precision_at_10
+  - recall_at_5
+  - recall_at_10
+  - mrr
+
+# Runtime configuration
+runtime:
+  checkpointing: true
+  checkpointGranularity: item
+  resumable: true

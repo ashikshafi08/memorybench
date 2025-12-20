@@ -6,6 +6,13 @@ import { JSONPath } from "jsonpath-plus";
 import type { BenchmarkConfig, BenchmarkItem, PreparedData } from "../../core/config.ts";
 import type { RawDataItem } from "./index.ts";
 import { loadLocalData } from "./local.ts";
+// Consolidated code retrieval loaders
+import {
+	loadRepoEvalData,
+	loadRepoBenchRData,
+	loadSWEBenchLiteData,
+	loadCrossCodeEvalData,
+} from "./generic-loader.ts";
 
 /**
  * Load benchmark data from the configured source.
@@ -19,6 +26,20 @@ export async function loadBenchmarkData(
 		questionType?: string;
 	},
 ): Promise<BenchmarkItem[]> {
+	// Special handling for code retrieval benchmarks with custom loaders
+	if (config.name === "repoeval") {
+		return loadRepoEvalData(config, options);
+	}
+	if (config.name === "repobench-r") {
+		return loadRepoBenchRData(config, options);
+	}
+	if (config.name === "swebench-lite") {
+		return loadSWEBenchLiteData(config, options);
+	}
+	if (config.name === "crosscodeeval") {
+		return loadCrossCodeEvalData(config, options);
+	}
+
 	// Load raw data
 	const rawData = await loadRawData(config);
 

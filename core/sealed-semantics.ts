@@ -62,6 +62,8 @@ export function validateSealedSemantics(
 		}
 	}
 
+
+
 	// Check scoring
 	if (pack.sealedSemantics.scoring) {
 		const method = config.evaluation?.method;

@@ -27,6 +27,8 @@
     "ai": "^5.0.44",
     "dedent": "^1.7.0",
     "glob": "^13.0.0",
+    "hyparquet": "^1.23.3",
+    "hyparquet-compressors": "^1.1.1",
     "jsonpath-plus": "^10.3.0",
     "p-limit": "^7.2.0",
     "yaml": "^2.8.2",

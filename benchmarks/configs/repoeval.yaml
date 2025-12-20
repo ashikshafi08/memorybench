@@ -1,0 +1,71 @@
+# RepoEval Code Retrieval Benchmark
+#
+# Evaluates code chunking quality on function-level code completion tasks.
+# Ground truth is the code location that should be retrieved to complete
+# the function being written.
+#
+# Dataset: Microsoft CodeT RepoEval (function_level subset)
+# Source: https://github.com/microsoft/CodeT
+#
+# This benchmark uses pack-owned semantics (repoeval@chunking-v1):
+#   - Relevance: file match + line-range overlap
+#   - Scoring: retrieval-only (no LLM generation)
+#   - Prompts: query is the code prefix
+
+name: repoeval
+displayName: RepoEval Code Retrieval
+description: Function-level code completion retrieval benchmark
+version: "1.0"
+source: https://github.com/microsoft/CodeT
+paper: "Repository-Level Prompt Generation for Large Language Models of Code"
+
+tags:
+  - code
+  - retrieval
+  - chunking
+  - true-chunking
+
+# Pack versioning - this benchmark uses sealed semantics
+packId: repoeval@chunking-v1
+
+# Data source
+# The loader handles downloading and caching automatically
+data:
+  type: local
+  path: repoeval
+  localPath: benchmarks/datasets/repoeval/datasets/function_level_completion_2k_context_codex.test.jsonl
+  format: jsonl
+
+# Schema mapping
+# Note: The repoeval-loader handles this specially, these are just for reference
+schema:
+  itemId: metadata.task_id
+  question: prompt
+  answer: metadata.ground_truth
+  metadata:
+    targetFile: metadata.fpath_tuple
+    startLine: metadata.context_start_lineno
+    endLine: metadata.line_no
+
+# Search configuration
+search:
+  defaultLimit: 10
+  defaultThreshold: 0.0
+  includeChunks: false
+
+# Metrics to compute
+# These use pack-grounded relevance (file + line overlap)
+metrics:
+  - ndcg_at_5
+  - ndcg_at_10
+  - precision_at_5
+  - precision_at_10
+  - recall_at_5
+  - recall_at_10
+  - mrr
+
+# Runtime configuration
+runtime:
+  checkpointing: true
+  checkpointGranularity: item
+  resumable: true

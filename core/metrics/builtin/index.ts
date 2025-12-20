@@ -34,6 +34,7 @@ export * from "./success.ts";
 export * from "./f1.ts";
 export * from "./bleu.ts";
 export * from "./rouge.ts";
+export * from "./file-recall.ts";
 
 import { AccuracyMetric } from "./accuracy.ts";
 import { AccuracyByQuestionTypeMetric } from "./accuracy-by-type.ts";
@@ -53,6 +54,7 @@ import { SuccessAt5Metric, SuccessAt10Metric } from "./success.ts";
 import { F1Metric } from "./f1.ts";
 import { Bleu1Metric } from "./bleu.ts";
 import { RougeLMetric } from "./rouge.ts";
+import { FileRecallAt5Metric, FileRecallAt10Metric } from "./file-recall.ts";
 import type { MetricCalculator } from "../interface.ts";
 
 /**
@@ -83,6 +85,9 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 		new PrecisionAt10Metric(),
 		new MRRMetric(),
 		new AvgRetrievalScoreMetric(),
+		// File-level recall (for SWE-bench style benchmarks)
+		new FileRecallAt5Metric(),
+		new FileRecallAt10Metric(),
 
 		// === Performance Metrics ===
 		new AvgSearchLatencyMetric(),

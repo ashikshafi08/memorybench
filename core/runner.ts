@@ -13,6 +13,8 @@ import { getDefaultRegistry, UnknownMetricError } from "./metrics/index.ts";
 import type { MetricResult } from "./metrics/interface.ts";
 import { measureLatency, addTelemetryToMetadata, type ItemTelemetry } from "./telemetry.ts";
 import { evaluate as evaluateWithLLM, type EvaluationResult } from "../benchmarks/evaluators/llm-judge.ts";
+import { getPackAndValidate } from "./sealed-semantics.ts";
+import type { BenchmarkPack, RunConfig } from "../benchmarks/packs/interface.ts";
 
 export interface RunOptions {
 	benchmarks: string[];
@@ -163,6 +165,10 @@ export class BenchmarkRunner {
 			await provider.initialize();
 		}
 
+		// Get pack for the benchmark (if exists)
+		// This enables pack-based evaluation dispatch for retrieval benchmarks
+		const pack = getPackAndValidate(benchmarkConfig, benchmarkConfig.packId);
+
 		try {
 			// Load benchmark data
 			const items = await loadBenchmarkData(benchmarkConfig, {
@@ -209,6 +215,7 @@ export class BenchmarkRunner {
 				runId,
 				runTag,
 				providerName,
+				pack,
 			);
 
 			// Cleanup
@@ -338,6 +345,9 @@ export class BenchmarkRunner {
 
 	/**
 	 * Evaluate phase - search and evaluate each item.
+	 * 
+	 * If a pack exists and owns scoring semantics (sealedSemantics.scoring === true),
+	 * evaluation is delegated to pack.evaluate(). Otherwise falls back to LLM judge.
 	 */
 	private async evaluatePhase(
 		provider: Provider,
@@ -346,6 +356,7 @@ export class BenchmarkRunner {
 		runId: string,
 		runTag: string,
 		providerName: string,
+		pack?: BenchmarkPack,
 	): Promise<EvalResult[]> {
 		const benchmarkName = benchmarkConfig.name;
 		const results: EvalResult[] = [];
@@ -392,9 +403,10 @@ export class BenchmarkRunner {
 					);
 
 				// Evaluate (with timing)
+				// If pack exists and owns scoring, use pack.evaluate(); otherwise use LLM judge
 				const { result: evaluation, latencyMs: evalLatencyMs } =
 					await measureLatency(() =>
-						this.evaluate(item, searchResults, benchmarkConfig),
+						this.evaluate(item, searchResults, benchmarkConfig, pack),
 					);
 
 				const totalLatencyMs = performance.now() - totalStart;
@@ -484,14 +496,43 @@ export class BenchmarkRunner {
 
 	/**
 	 * Evaluate a single item using the configured evaluation method.
-	 * Supports exact-match and LLM-judge evaluation.
+	 * 
+	 * Evaluation dispatch order:
+	 * 1. If pack exists and sealedSemantics.scoring === true, use pack.evaluate()
+	 * 2. Otherwise fall back to LLM judge (evaluateWithLLM)
+	 * 
+	 * This enables retrieval-only benchmarks (like code chunking benchmarks) to run
+	 * without any LLM calls by having their pack implement evaluation logic.
 	 */
 	private async evaluate(
 		item: BenchmarkItem,
 		searchResults: SearchResult[],
 		benchmarkConfig: BenchmarkConfig,
+		pack?: BenchmarkPack,
 	): Promise<{ answer: string; score: number; correct: boolean; reasoning?: string }> {
-		// Use the real evaluator from llm-judge.ts
+		// Dispatch to pack when it owns scoring semantics
+		if (pack && pack.sealedSemantics.scoring) {
+			const runConfig: RunConfig = {
+				answeringModel: benchmarkConfig.evaluation?.answeringModel?.model,
+				judgeModel: benchmarkConfig.evaluation?.judge?.model,
+				topK: benchmarkConfig.search?.defaultLimit ?? 10,
+			};
+
+			const packResult = await pack.evaluate({
+				item,
+				retrieved: searchResults,
+				run: runConfig,
+			});
+
+			return {
+				answer: packResult.answer,
+				score: packResult.score,
+				correct: packResult.correct,
+				reasoning: packResult.reasoning,
+			};
+		}
+
+		// Fall back to LLM judge for memory benchmarks without pack scoring
 		const result = await evaluateWithLLM(item, searchResults, benchmarkConfig);
 
 		return {

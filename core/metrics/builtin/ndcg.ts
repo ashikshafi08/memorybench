@@ -153,7 +153,7 @@ export class NDCGAtKMetric implements MetricCalculator {
 	private computeRelevance(
 		result: EvalResult,
 		retrievedContext: SearchResult[],
-		pack: ReturnType<typeof getPackRegistry>["prototype"]["getLatest"] extends (name: string) => infer R ? R : never,
+		pack: import("../../../benchmarks/packs/interface.ts").BenchmarkPack | undefined,
 	): RelevanceInfo {
 		// Strategy A: Explicit qrels in metadata (code-chunk style)
 		const qrels = this.extractQrels(result);

@@ -191,6 +191,7 @@ Usage:
 Commands:
   list              List available providers and benchmarks
   describe <name>   Describe a specific benchmark or provider
+  download          Download benchmark datasets
   eval              Run evaluation
   results <runId>   View results for a run
   export <runId>    Export results to file
@@ -348,6 +349,74 @@ async function describeCommand(
 
 	console.error(`\n❌ Not found: '${name}' is not a known provider or benchmark.\n`);
 	process.exit(1);
+}
+
+/**
+ * Download command - download benchmark datasets.
+ */
+async function downloadCommand(
+	options: Record<string, string | string[] | boolean>,
+): Promise<void> {
+	const { getDataset, getDatasetNames } = await import(
+		"../benchmarks/loaders/download/dataset-registry.ts"
+	);
+
+	const benchmarkNames = toStringArray(options.benchmarks) ?? toStringArray(options.benchmark);
+	const allFlag = options.all === true;
+
+	// Determine which datasets to download
+	let datasetsToDownload: string[];
+
+	if (allFlag) {
+		datasetsToDownload = getDatasetNames();
+	} else if (benchmarkNames && benchmarkNames.length > 0) {
+		datasetsToDownload = benchmarkNames;
+	} else {
+		console.log(`
+╭─────────────────────────────────────────────────────────────────╮
+│                      DOWNLOAD DATASETS                          │
+╰─────────────────────────────────────────────────────────────────╯
+
+Usage:
+  memorybench download --benchmark <name>    Download a specific dataset
+  memorybench download --benchmarks <names>  Download multiple datasets
+  memorybench download --all                 Download all datasets
+
+Available datasets:
+${getDatasetNames().map((n: string) => `  - ${n}`).join("\n")}
+
+Examples:
+  memorybench download --benchmark repoeval
+  memorybench download --benchmarks repoeval repobench-r
+  memorybench download --all
+`);
+		return;
+	}
+
+	console.log(`\n📥 Downloading ${datasetsToDownload.length} dataset(s)...\n`);
+
+	for (const name of datasetsToDownload) {
+		const dataset = getDataset(name);
+		if (!dataset) {
+			console.error(`❌ Unknown dataset: ${name}`);
+			console.log(`   Available: ${getDatasetNames().join(", ")}`);
+			continue;
+		}
+
+		if (dataset.isAvailable()) {
+			console.log(`✅ ${name}: Already downloaded`);
+		} else {
+			console.log(`📥 ${name}: Downloading...`);
+			try {
+				await dataset.download();
+				console.log(`✅ ${name}: Download complete`);
+			} catch (error) {
+				console.error(`❌ ${name}: Download failed - ${error}`);
+			}
+		}
+	}
+
+	console.log("\n✨ Done!\n");
 }
 
 /**
@@ -692,6 +761,10 @@ async function main(): Promise<void> {
 				process.exit(1);
 			}
 			await describeCommand(registry, parsed.args[0]);
+			break;
+
+		case "download":
+			await downloadCommand(parsed.options);
 			break;
 
 		case "eval":

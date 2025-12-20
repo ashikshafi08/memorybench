@@ -1,686 +1,537 @@
-# Phase 2: Code Retrieval Benchmarks for memorybench
+# Phase 2: Code Retrieval Benchmark Suite
 
 ## Overview
 
-This document outlines the implementation plan for adding code retrieval benchmarks to memorybench to evaluate code chunking strategies (code-chunk, Chonkie, Fixed chunkers).
+This document outlines the benchmark suite for evaluating code chunking strategies. The suite focuses exclusively on **true-chunking benchmarks** where we chunk raw repositories ourselves, ensuring we measure chunking quality rather than embedding quality.
 
-### Target Benchmarks
-
-| Benchmark | Datasets | Languages | Primary Use |
-|-----------|----------|-----------|-------------|
-| **CoIR** | 10 datasets | 14+ languages | Comprehensive code retrieval |
-| **CodeSearchNet** | 6 language sets | Python, Java, JS, PHP, Ruby, Go | Text-to-code retrieval |
-| **RepoBench** | 2 settings | Python, Java | Repository-level retrieval |
-
-### Primary Metric
-
-**nDCG@10** (implemented in Phase 1) - the gold standard for code retrieval evaluation, used by CoIR, MTEB, and BEIR.
+**Goal:** Measure and compare code chunking strategies for retrieval tasks.
 
 ---
 
-## 1. CoIR Benchmark
+## Critical Design Decision: True-Chunking Only
 
-### Academic Reference
+### Why True-Chunking Benchmarks?
 
-**CoIR: A Comprehensive Benchmark for Code Information Retrieval Models** (2024)
-- Paper: [arXiv:2407.02883](https://arxiv.org/abs/2407.02883)
-- Hugging Face: [CoIR-Retrieval](https://huggingface.co/CoIR-Retrieval)
-- GitHub: [CoIR-team/coir](https://github.com/CoIR-team/coir)
+| Type | Benchmarks | What They Test | For Code Chunking? |
+|------|------------|----------------|-------------------|
+| **True Chunking** | RepoEval, RepoBench-R, SWE-bench Lite, CrossCodeEval | Raw repos WE chunk | ✅ YES - Tests chunking quality |
+| **Pre-Chunked** | CoIR, CodeSearchNet, MTEB | Fixed corpus already chunked | ❌ NO - Tests embedding/retrieval only |
 
-### The 10 CoIR Datasets
+**Why this matters:** Pre-chunked benchmarks (CoIR, CodeSearchNet, MTEB) have pre-defined document corpora. Using them tests embedding quality, NOT chunking quality. To evaluate "which chunker is best", we MUST use **true-chunking benchmarks** where chunking decisions affect results.
 
-| # | Dataset | Task Type | Domain | Corpus Size | Languages |
-|---|---------|-----------|--------|-------------|-----------|
-| 1 | **apps** | Text-to-Code | Code Contest | 9K | Python |
-| 2 | **cosqa** | Text-to-Code | Web Query | 21K | Python |
-| 3 | **synthetic-text2sql** | Text-to-Code | Database | 106K | SQL |
-| 4 | **codesearchnet** | Code-to-Text | GitHub | 1M | 6 languages |
-| 5 | **codesearchnet-ccr** | Code-to-Code | GitHub | 1M | 6 languages |
-| 6 | **codetrans-dl** | Code-to-Code | Deep Learning | 816 | Python |
-| 7 | **codetrans-contest** | Code-to-Code | Contest | 1K | C++, Python |
-| 8 | **stackoverflow-qa** | Hybrid | Stack Overflow | 20K | Mixed |
-| 9 | **codefeedback-st** | Hybrid | Instruction | 156K | 11+ languages |
-| 10 | **codefeedback-mt** | Hybrid | Instruction | 66K | Mixed |
+### What We Include
 
-### Data Format (BEIR/MTEB Compatible)
+```
+✅ TRUE-CHUNKING BENCHMARKS (we chunk raw repos):
+├── RepoEval        - Function/line/API completion (Python)
+├── RepoBench-R     - Explicit retrieval task (Python, Java)
+├── SWE-bench Lite  - Bug localization (Python)
+└── CrossCodeEval   - Cross-file dependencies (Python, Java, TS, C#)
 
-CoIR uses the standard BEIR schema with three components:
-
-#### Corpus (documents/code snippets)
-```json
-{
-  "_id": "doc_123",
-  "text": "<code content>",
-  "partition": "test",
-  "language": "python",
-  "title": "Function name",
-  "meta_information": {"url": "...", "starter_code": "..."}
-}
+❌ EXCLUDED (pre-chunked, tests embeddings not chunking):
+├── CoIR            - Fixed corpus with explicit qrels
+├── CodeSearchNet   - Pre-defined document pairs
+├── MTEB            - Embedding-focused benchmark
+└── CodeRAG-Bench   - Pre-chunked 25M doc corpus
 ```
 
-#### Queries (search queries)
-```json
-{
-  "_id": "q_456",
-  "text": "Find a function that sorts an array in ascending order",
-  "partition": "test",
-  "language": "python"
-}
-```
-
-#### Qrels (relevance judgments)
-```json
-{
-  "query-id": "q_456",
-  "corpus-id": "doc_123",
-  "score": 1
-}
-```
-
-### Access via Hugging Face
-
-```python
-from datasets import load_dataset
-
-# Load corpus
-corpus = load_dataset("CoIR-Retrieval/apps", "corpus")
-
-# Load queries
-queries = load_dataset("CoIR-Retrieval/apps", "queries")
-
-# Load qrels (relevance judgments)
-qrels = load_dataset("CoIR-Retrieval/apps", "default")
-```
+> **Note:** Pre-chunked benchmarks could be added later as a separate "embedding-only" evaluation track, but they are out of scope for chunking quality measurement.
 
 ---
 
-## 2. CodeSearchNet Benchmark
+## Benchmark Selection
 
-### Academic Reference
+### Selected Benchmarks (True-Chunking)
 
-**CodeSearchNet Challenge: Evaluating the State of Semantic Code Search** (2019)
-- Paper: [arXiv:1909.09436](https://arxiv.org/abs/1909.09436)
-- GitHub: [github/CodeSearchNet](https://github.com/github/CodeSearchNet)
+| Benchmark | Languages | Samples | Ground Truth | Priority |
+|-----------|-----------|---------|--------------|----------|
+| **RepoEval** | Python | 3,655 | Line-range overlap | **P0** |
+| **RepoBench-R** | Python, Java | 192K | Gold snippet Jaccard | **P1** |
+| **SWE-bench Lite** | Python | 323 | Patch file list | **P2** |
+| **CrossCodeEval** | Python, Java, TS, C# | 10K | Cross-file dependencies | **P3** |
 
-### Data Format (JSONL)
+### Benchmark Details
 
-```json
-{
-  "code": "def sort_array(arr):\n    return sorted(arr)",
-  "docstring": "Sort an array in ascending order",
-  "code_tokens": ["def", "sort_array", "(", "arr", ")", "..."],
-  "docstring_tokens": ["Sort", "an", "array", "..."],
-  "func_name": "sort_array",
-  "repo": "owner/repo-name",
-  "path": "src/utils/sorting.py",
-  "language": "python",
-  "url": "https://github.com/..."
-}
+#### 1. RepoEval (P0 - Essential)
+
+**Source:** Microsoft CodeT/RepoCoder
+**Paper:** [arXiv:2303.12570](https://arxiv.org/abs/2303.12570)
+
+```
+Task: Given code completion prompt, retrieve relevant context from repo
+Ground Truth: Chunk overlaps with target line range
+Metrics: nDCG@5, nDCG@10, Recall@K, MRR
 ```
 
-### Key Characteristics
+**Data:**
+- 8 Python repositories
+- 3 task types: function_completion, line_completion, api_completion
+- 3,655 total samples
 
-| Property | Value |
-|----------|-------|
-| **Size** | ~2 million (code, docstring) pairs |
-| **Languages** | Python, JavaScript, Java, PHP, Ruby, Go |
-| **Task** | Natural language → Code retrieval |
-| **Evaluation** | 99 hand-crafted queries with human relevance (0-3 scale) |
+**Why Essential:**
+- code-chunk's existing eval uses RepoEval
+- Enables direct comparison with published results
+- Well-defined ground truth (line-range overlap)
 
-### Access Methods
+#### 2. RepoBench-R (P1 - High)
 
-```python
-# Via Hugging Face
-from datasets import load_dataset
-dataset = load_dataset("code-search-net/code_search_net", "python")
+**Source:** [RepoBench](https://github.com/Leolty/repobench)
+**Paper:** [arXiv:2306.03091](https://arxiv.org/abs/2306.03091)
 
-# Direct S3 download
-# https://s3.amazonaws.com/code-search-net/CodeSearchNet/v2/{language}.zip
 ```
+Task: Retrieve relevant code snippet for completion
+Ground Truth: Gold snippet with index, Jaccard similarity matching
+Metrics: nDCG@K, Recall@K
+```
+
+**Data:**
+- Python: ~96K samples
+- Java: ~96K samples
+- Gold snippet provided with explicit index
+
+**Why Include:**
+- Explicit retrieval benchmark (not completion-focused)
+- Multi-language (Python + Java)
+- Large scale validates statistical significance
+
+#### 3. SWE-bench Lite (P2 - High)
+
+**Source:** [SWE-bench](https://www.swebench.com/)
+**Paper:** [arXiv:2310.06770](https://arxiv.org/abs/2310.06770)
+
+```
+Task: Given issue description, retrieve files to modify
+Ground Truth: Files modified in ground-truth patch
+Metrics: File-Recall@K
+```
+
+**Data:**
+- 323 real GitHub issues (dev + test)
+- Real-world bug localization task
+
+**Why Include:**
+- Tests retrieval for real-world code repair
+- File-level ground truth (tests multi-file retrieval)
+- Industry-standard benchmark
+
+#### 4. CrossCodeEval (P3 - Medium)
+
+**Source:** [CrossCodeEval](https://github.com/anthropics/cross-code-eval)
+**Paper:** [arXiv:2310.11248](https://arxiv.org/abs/2310.11248)
+
+```
+Task: Retrieve cross-file dependencies for code completion
+Ground Truth: Import/dependency analysis
+Metrics: Retrieval accuracy
+```
+
+**Data:**
+- Python, Java, TypeScript, C#
+- Cross-file dependency tasks
+
+**Why Include:**
+- Tests cross-file understanding
+- Critical for real-world codebases
+- Shows chunker advantage for dependency tracking
 
 ---
 
-## 3. RepoBench Benchmark
+## Provider (Chunker) Selection
 
-### Academic Reference
+### MVP Providers
 
-**RepoBench: Benchmarking Repository-Level Code Auto-Completion Systems** (2023)
-- Paper: [arXiv:2306.03091](https://arxiv.org/abs/2306.03091)
-- GitHub: [Leolty/repobench](https://github.com/Leolty/repobench)
+| Provider | Type | Languages | Integration | Priority |
+|----------|------|-----------|-------------|----------|
+| **code-chunk-ast** | AST-aware | 10+ | Native TypeScript | **Essential** |
+| **code-chunk-fixed** | NWS character | Any | Native TypeScript | **Essential** |
+| **chonkie-code** | tree-sitter semantic | 56+ | Python subprocess | **Essential** |
+| **chonkie-recursive** | Character fallback | Any | Python subprocess | **Essential** |
 
-### Three Tasks
+### Extension Providers (Optional)
 
-| Task | Description | Relevance to Chunking |
-|------|-------------|----------------------|
-| **RepoBench-R** | Retrieve relevant cross-file context | **Primary** - tests chunking quality |
-| **RepoBench-C** | Code completion with given context | Secondary |
-| **RepoBench-P** | Pipeline (retrieval + completion) | End-to-end |
+| Provider | Type | Integration | Notes |
+|----------|------|-------------|-------|
+| LangChain CodeSplitter | Language-aware | Python subprocess | Industry standard |
+| LlamaIndex CodeSplitter | AST-aware | Python subprocess | Direct AST competitor |
+| cAST | AST-aware | Python subprocess | Research baseline |
 
-### Data Format
+### Provider Details
 
-```python
-{
-  "repo_name": "owner/repo",
-  "file_path": "src/utils.py",
-  "context": "<surrounding code>",
-  "import_statement": "from utils import helper",
-  "cross_file_context": "<relevant code from other files>",
-  "next_line": "<line to predict>",
-  "language": "python"
-}
-```
-
-### Access
-
-```python
-from datasets import load_dataset
-
-# Python
-python_data = load_dataset("tianyang/repobench_python_v1.1")
-
-# Java
-java_data = load_dataset("tianyang/repobench_java_v1.1")
-```
-
----
-
-## Implementation Plan for memorybench
-
-### 1. Benchmark Loader Architecture
-
-memorybench already has a flexible loader system in `benchmarks/loaders/`. We need to add CoIR/BEIR-compatible loaders.
-
-#### File Structure
-
-```
-memorybench/
-├── benchmarks/
-│   ├── loaders/
-│   │   ├── coir.ts          # NEW: CoIR dataset loader
-│   │   ├── codesearchnet.ts # NEW: CodeSearchNet loader
-│   │   ├── repobench.ts     # NEW: RepoBench loader
-│   │   └── beir-schema.ts   # NEW: Shared BEIR schema types
-│   └── packs/
-│       ├── coir/            # NEW: CoIR benchmark packs
-│       │   ├── apps.ts
-│       │   ├── cosqa.ts
-│       │   └── index.ts
-│       ├── codesearchnet/   # NEW: CodeSearchNet pack
-│       └── repobench/       # NEW: RepoBench pack
-```
-
-### 2. BEIR Schema Types
+#### 1. code-chunk-ast (Essential)
 
 ```typescript
-// benchmarks/loaders/beir-schema.ts
+import { chunk } from 'code-chunk';
 
-/**
- * BEIR/MTEB/CoIR standard schema types.
- * Used by CoIR, MTEB retrieval tasks, and BEIR benchmark.
- */
+const chunks = await chunk(filepath, code, {
+  maxChunkSize: 1500,  // NWS tokens
+  contextMode: 'full',
+});
 
-export interface BEIRCorpusItem {
-  _id: string;
-  text: string;
-  title?: string;
-  partition?: "train" | "dev" | "test";
-  language?: string;
-  meta_information?: Record<string, unknown>;
-}
-
-export interface BEIRQueryItem {
-  _id: string;
-  text: string;
-  partition?: "train" | "dev" | "test";
-  language?: string;
-  meta_information?: Record<string, unknown>;
-}
-
-export interface BEIRQrel {
-  "query-id": string;
-  "corpus-id": string;
-  score: number; // Typically 0 or 1 for binary relevance
-}
-
-export interface BEIRDataset {
-  corpus: BEIRCorpusItem[];
-  queries: BEIRQueryItem[];
-  qrels: BEIRQrel[];
-}
+// Uses contextualizedText for embeddings (includes imports, scope, siblings)
+const textForEmbedding = chunks.map(c => c.contextualizedText);
 ```
 
-### 3. CoIR Loader Implementation
+- **Type:** AST-aware via tree-sitter
+- **Key Feature:** `contextualizedText` includes imports, types, scope
+- **Languages:** Python, TypeScript, Java, Go, Rust, C++, etc.
+
+#### 2. code-chunk-fixed (Essential Baseline)
 
 ```typescript
-// benchmarks/loaders/coir.ts
+import { chunkFixed } from 'code-chunk';
 
-import type { BenchmarkItem } from "../interface.ts";
-import type { BEIRDataset, BEIRQrel } from "./beir-schema.ts";
+const chunks = chunkFixed(code, {
+  maxNws: 1500,
+});
+```
 
-/**
- * CoIR dataset names matching Hugging Face repository names.
- */
-export const COIR_DATASETS = [
-  "apps",
-  "cosqa",
-  "synthetic-text2sql",
-  "codesearchnet",
-  "codesearchnet-ccr",
-  "codetrans-dl",
-  "codetrans-contest",
-  "stackoverflow-qa",
-  "codefeedback-st",
-  "codefeedback-mt",
-] as const;
+- **Type:** NWS (non-whitespace) character-based
+- **Key Feature:** Baseline control, no syntax awareness
+- **Languages:** Any (language-agnostic)
 
-export type CoIRDatasetName = (typeof COIR_DATASETS)[number];
+#### 3. chonkie-code (Essential)
 
-/**
- * Load a CoIR dataset from Hugging Face.
- *
- * @param datasetName - One of the 10 CoIR dataset names
- * @param options - Loading options (split, limit, etc.)
- */
-export async function loadCoIRDataset(
-  datasetName: CoIRDatasetName,
-  options: {
-    split?: "train" | "dev" | "test";
-    limit?: number;
-    cacheDir?: string;
-  } = {},
-): Promise<{
-  items: BenchmarkItem[];
-  corpus: Map<string, string>;
-  qrels: Map<string, Set<string>>;
-}> {
-  const { split = "test", limit, cacheDir } = options;
+```python
+from chonkie import CodeChunker
 
-  // Download from Hugging Face using existing download infrastructure
-  const baseUrl = `https://huggingface.co/datasets/CoIR-Retrieval/${datasetName}`;
+chunker = CodeChunker(
+    chunk_size=1500,
+    chunk_overlap=200,
+)
+chunks = chunker.chunk(code)
+```
 
-  // Load corpus, queries, qrels (implementation details below)
-  const corpus = await loadParquet(`${baseUrl}/corpus`);
-  const queries = await loadParquet(`${baseUrl}/queries`);
-  const qrels = await loadParquet(`${baseUrl}/default`);
+- **Type:** tree-sitter semantic chunking
+- **Key Feature:** 56+ languages, automatic detection
+- **Integration:** Python subprocess from TypeScript
 
-  // Build qrels lookup: query_id -> Set<corpus_ids>
-  const qrelsMap = new Map<string, Set<string>>();
-  for (const qrel of qrels) {
-    if (qrel.score > 0) {
-      const existing = qrelsMap.get(qrel["query-id"]) ?? new Set();
-      existing.add(qrel["corpus-id"]);
-      qrelsMap.set(qrel["query-id"], existing);
-    }
-  }
+#### 4. chonkie-recursive (Essential)
 
-  // Build corpus lookup: corpus_id -> text
-  const corpusMap = new Map<string, string>();
-  for (const doc of corpus) {
-    corpusMap.set(doc._id, doc.text);
-  }
+```python
+from chonkie import RecursiveChunker
 
-  // Convert to BenchmarkItems
-  const items: BenchmarkItem[] = queries
-    .filter((q) => q.partition === split || !q.partition)
-    .slice(0, limit)
-    .map((query) => {
-      const relevantIds = qrelsMap.get(query._id) ?? new Set();
-      return {
-        id: query._id,
-        question: query.text,
-        answer: "", // Retrieval task - no answer, use qrels
-        contexts: [], // Will be populated during evaluation
-        metadata: {
-          language: query.language,
-          relevantIds: Array.from(relevantIds),
-          dataset: datasetName,
-          taskType: getTaskType(datasetName),
-        },
-      };
-    });
+chunker = RecursiveChunker(
+    chunk_size=1500,
+    chunk_overlap=200,
+)
+chunks = chunker.chunk(code)
+```
 
-  return { items, corpus: corpusMap, qrels: qrelsMap };
-}
+- **Type:** Character-based with recursive splitting
+- **Key Feature:** Fallback baseline from chonkie
+- **Integration:** Python subprocess from TypeScript
 
-function getTaskType(dataset: CoIRDatasetName): string {
-  const taskTypes: Record<CoIRDatasetName, string> = {
-    apps: "text-to-code",
-    cosqa: "text-to-code",
-    "synthetic-text2sql": "text-to-code",
-    codesearchnet: "code-to-text",
-    "codesearchnet-ccr": "code-to-code",
-    "codetrans-dl": "code-to-code",
-    "codetrans-contest": "code-to-code",
-    "stackoverflow-qa": "hybrid",
-    "codefeedback-st": "hybrid",
-    "codefeedback-mt": "hybrid",
+---
+
+## Embedding Selection
+
+### Selected Embeddings
+
+| Model | Provider | Dimensions | Cost | Priority |
+|-------|----------|------------|------|----------|
+| **voyage-code-3** | Voyage | 1024 | $0.18/1M | **Primary** |
+| **text-embedding-3-small** | OpenAI | 1536 | $0.02/1M | **Secondary** |
+
+### Why These Two?
+
+1. **voyage-code-3**: Code-specialized, state-of-art for code retrieval
+2. **text-embedding-3-small**: General-purpose baseline, cost-effective
+
+### Expected Insights
+
+| Scenario | Hypothesis |
+|----------|------------|
+| AST + Voyage | Strong improvement (code-aware embedding + code-aware chunking) |
+| AST + OpenAI | Improvement (proves chunking helps even with general embeddings) |
+| Fixed + Voyage | Better than Fixed + OpenAI (embedding quality helps) |
+
+If a chunker wins across **both** embedding models, it proves chunking quality is independent of embedding choice.
+
+---
+
+## Scope Options
+
+### Option A: MVP (Recommended)
+
+| Dimension | Coverage |
+|-----------|----------|
+| Benchmarks | RepoEval only |
+| Providers | code-chunk-ast, code-chunk-fixed, chonkie-code, chonkie-recursive |
+| Embeddings | voyage-code-3 |
+| Languages | Python |
+
+**Effort:** ~15-20 hours
+**Output:** Clear comparison on code-chunk's home turf
+
+### Option B: Multi-Dataset
+
+| Dimension | Coverage |
+|-----------|----------|
+| Benchmarks | RepoEval + RepoBench-R + SWE-bench Lite |
+| Providers | 4 MVP providers |
+| Embeddings | voyage-code-3, openai-small |
+| Languages | Python, Java |
+
+**Effort:** ~35-40 hours
+**Output:** Multi-dataset validation, stronger claims
+
+### Option C: Full Suite
+
+| Dimension | Coverage |
+|-----------|----------|
+| Benchmarks | All 4 true-chunking benchmarks |
+| Providers | 4 MVP + 3 extension providers |
+| Embeddings | voyage-code-3, openai-small |
+| Languages | Python, Java, TypeScript, C# |
+
+**Effort:** ~60-70 hours
+**Output:** Comprehensive benchmark suite
+
+### Recommendation: Start with Option A
+
+1. **Phase A:** RepoEval with 4 providers + voyage-code-3
+2. **Phase B:** If results are promising, add RepoBench-R + SWE-bench Lite
+3. **Phase C:** If needed for publication, add CrossCodeEval + extension providers
+
+---
+
+## Statistical Analysis Protocol
+
+### Requirements
+
+All comparisons must include:
+
+```typescript
+interface StatisticalRequirements {
+  // Minimum runs
+  runsPerConfiguration: 3;
+
+  // Confidence intervals
+  confidenceLevel: 0.95;
+  bootstrapSamples: 10000;
+
+  // Significance testing
+  significanceThreshold: 0.05;
+  test: "paired-t-test" | "wilcoxon-signed-rank";
+
+  // Multiple comparison correction
+  correction: "bonferroni";
+
+  // Effect size
+  effectSizeMetric: "cohens-d";
+  effectSizeThresholds: {
+    small: 0.2,
+    medium: 0.5,
+    large: 0.8,
   };
-  return taskTypes[dataset];
 }
 ```
 
-### 4. CoIR Benchmark Pack
+### Reporting Format
 
-```typescript
-// benchmarks/packs/coir/apps.ts
-
-import { definePack } from "../define.ts";
-import { loadCoIRDataset } from "../../loaders/coir.ts";
-
-export const appsPack = definePack({
-  name: "coir-apps",
-  description: "CoIR APPS dataset - Code contest text-to-code retrieval",
-
-  sealedSemantics: {
-    relevance: true, // Use qrels for relevance, not token matching
-  },
-
-  async load(options) {
-    const { items, corpus, qrels } = await loadCoIRDataset("apps", {
-      split: options?.split ?? "test",
-      limit: options?.limit,
-    });
-
-    return {
-      items,
-      metadata: {
-        corpus,
-        qrels,
-        taskType: "text-to-code",
-        languages: ["python"],
-      },
-    };
-  },
-
-  isRelevant({ item, result }) {
-    const relevantIds = item.metadata?.relevantIds as string[] | undefined;
-    if (!relevantIds) return false;
-    return relevantIds.includes(result.id);
-  },
-});
 ```
-
-### 5. Dataset Download & Caching
-
-Extend existing `benchmarks/loaders/download.ts`:
-
-```typescript
-// Add Hugging Face parquet support
-
-export interface HuggingFaceSource {
-  type: "huggingface";
-  repo: string;       // e.g., "CoIR-Retrieval/apps"
-  config?: string;    // e.g., "corpus", "queries", "default"
-  split?: string;     // e.g., "train", "test"
-}
-
-/**
- * Download parquet files from Hugging Face datasets.
- * Uses the datasets library format with automatic caching.
- */
-export async function downloadHuggingFaceDataset(
-  source: HuggingFaceSource,
-  cacheDir = "~/.memorybench/datasets/huggingface",
-): Promise<string> {
-  const { repo, config = "default", split = "train" } = source;
-
-  // Construct parquet URL
-  // Format: https://huggingface.co/datasets/{repo}/resolve/main/{config}/{split}-00000-of-00001.parquet
-  const baseUrl = `https://huggingface.co/datasets/${repo}/resolve/main`;
-  const parquetUrl = `${baseUrl}/${config}/${split}-00000-of-00001.parquet`;
-
-  // Download with caching (reuse existing download infrastructure)
-  const cachePath = path.join(cacheDir, repo, config, `${split}.parquet`);
-
-  if (await fileExists(cachePath)) {
-    return cachePath;
-  }
-
-  await downloadFile(parquetUrl, cachePath);
-  return cachePath;
-}
+┌─────────────────────────────────────────────────────────────────────┐
+│                    BENCHMARK RESULTS: RepoEval                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Provider         │ nDCG@10       │ Recall@10     │ MRR            │
+│  ─────────────────┼───────────────┼───────────────┼────────────────│
+│  code-chunk-ast   │ (TBD) ± (TBD) │ (TBD) ± (TBD) │ (TBD) ± (TBD)  │
+│  chonkie-code     │ (TBD) ± (TBD) │ (TBD) ± (TBD) │ (TBD) ± (TBD)  │
+│  chonkie-recursive│ (TBD) ± (TBD) │ (TBD) ± (TBD) │ (TBD) ± (TBD)  │
+│  code-chunk-fixed │ (TBD) ± (TBD) │ (TBD) ± (TBD) │ (TBD) ± (TBD)  │
+│                                                                     │
+│  ** p < 0.01 vs code-chunk-fixed baseline (Bonferroni-corrected)   │
+│  *  p < 0.05 vs code-chunk-fixed baseline                          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
-
-### 6. Parquet Reader
-
-memorybench needs parquet reading capability. Options:
-
-#### Option A: Use `parquetjs` (Pure JS)
-```typescript
-import parquet from "parquetjs";
-
-async function loadParquet<T>(filePath: string): Promise<T[]> {
-  const reader = await parquet.ParquetReader.openFile(filePath);
-  const cursor = reader.getCursor();
-  const records: T[] = [];
-
-  let record = null;
-  while ((record = await cursor.next())) {
-    records.push(record as T);
-  }
-
-  await reader.close();
-  return records;
-}
-```
-
-#### Option B: Convert to JSON on download (simpler)
-```typescript
-// Use Python to convert parquet to JSON during download
-async function downloadAndConvertParquet(url: string, outputPath: string) {
-  const parquetPath = outputPath.replace(".json", ".parquet");
-  await downloadFile(url, parquetPath);
-
-  // Convert with Python
-  await Bun.spawn([
-    "python3", "-c", `
-import pandas as pd
-import json
-df = pd.read_parquet("${parquetPath}")
-df.to_json("${outputPath}", orient="records", lines=True)
-`
-  ]).exited;
-}
-```
-
-**Recommendation**: Option B is simpler and avoids adding a parquet dependency. The conversion happens once on download.
 
 ---
 
-## Evaluation Flow
+## Implementation Plan
 
-### How Code Retrieval Benchmarks Work
+### Phase 2a: Core Infrastructure (~5 hours)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    EVALUATION FLOW                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. Load Benchmark                                          │
-│     ┌────────────┐    ┌────────────┐    ┌────────────┐     │
-│     │   Corpus   │    │  Queries   │    │   Qrels    │     │
-│     │ (code docs)│    │  (NL text) │    │(relevance) │     │
-│     └─────┬──────┘    └─────┬──────┘    └─────┬──────┘     │
-│           │                 │                 │             │
-│  2. Chunk & Embed Corpus    │                 │             │
-│     ┌─────▼──────┐          │                 │             │
-│     │  Chunker   │ ◄─── code-chunk / Chonkie / Fixed       │
-│     │ (AST/Fixed)│                            │             │
-│     └─────┬──────┘                            │             │
-│           │                                   │             │
-│     ┌─────▼──────┐                            │             │
-│     │  Embedder  │ ◄─── OpenAI / Voyage / Nomic            │
-│     └─────┬──────┘                            │             │
-│           │                                   │             │
-│     ┌─────▼──────┐                            │             │
-│     │ Vector DB  │                            │             │
-│     └─────┬──────┘                            │             │
-│           │                                   │             │
-│  3. Query & Retrieve        │                 │             │
-│           │      ┌──────────┘                 │             │
-│           │      │                            │             │
-│     ┌─────▼──────▼─────┐                      │             │
-│     │ Embed Query &    │                      │             │
-│     │ Retrieve Top-K   │                      │             │
-│     └─────────┬────────┘                      │             │
-│               │                               │             │
-│  4. Evaluate  │                               │             │
-│     ┌─────────▼────────┐    ┌────────────────┘             │
-│     │  Compare to      │◄───┤                              │
-│     │  Ground Truth    │    │                              │
-│     └─────────┬────────┘                                   │
-│               │                                             │
-│     ┌─────────▼────────┐                                   │
-│     │  Compute Metrics │                                   │
-│     │  nDCG@10, MAP,   │                                   │
-│     │  Recall@K, etc.  │                                   │
-│     └──────────────────┘                                   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+| Task | Files | Effort |
+|------|-------|--------|
+| RepoEval loader | `loaders/repoeval.ts` | 2 hours |
+| RepoEval benchmark pack | `benchmarks/repoeval/` | 2 hours |
+| Ground truth matching | `evaluation/relevance.ts` | 1 hour |
 
-### Key Difference from Memory Benchmarks
+### Phase 2b: Provider Adapters (~8 hours)
 
-| Aspect | Memory Benchmarks | Code Retrieval Benchmarks |
-|--------|-------------------|---------------------------|
-| **Relevance** | Token F1 matching | Ground-truth qrels (IDs) |
-| **Answer** | Expected text response | N/A (retrieval only) |
-| **Corpus** | Pre-chunked contexts | Raw code to be chunked |
-| **Goal** | Find context for QA | Find relevant code |
-| **Primary Metric** | Success@K, Accuracy | nDCG@10 |
+| Task | Files | Effort |
+|------|-------|--------|
+| code-chunk-ast adapter | `providers/code-chunk-ast.ts` | 2 hours |
+| code-chunk-fixed adapter | `providers/code-chunk-fixed.ts` | 1 hour |
+| chonkie Python bridge | `providers/chonkie-bridge.ts` | 3 hours |
+| chonkie-code adapter | `providers/chonkie-code.ts` | 1 hour |
+| chonkie-recursive adapter | `providers/chonkie-recursive.ts` | 1 hour |
+
+### Phase 2c: Embedding Integration (~4 hours)
+
+| Task | Files | Effort |
+|------|-------|--------|
+| Voyage Code 3 integration | `embeddings/voyage.ts` | 2 hours |
+| OpenAI small integration | `embeddings/openai.ts` | 1 hour |
+| Embedding cache | `embeddings/cache.ts` | 1 hour |
+
+### Phase 2d: Additional Benchmarks (~12 hours)
+
+| Task | Files | Effort |
+|------|-------|--------|
+| RepoBench-R loader | `loaders/repobench.ts` | 4 hours |
+| SWE-bench Lite loader | `loaders/swebench.ts` | 5 hours |
+| CrossCodeEval loader | `loaders/crosscodeeval.ts` | 3 hours |
+
+### Phase 2e: Statistical Framework (~4 hours)
+
+| Task | Files | Effort |
+|------|-------|--------|
+| Bootstrap CI implementation | `stats/bootstrap.ts` | 1 hour |
+| Significance tests | `stats/significance.ts` | 1 hour |
+| Effect size calculations | `stats/effect-size.ts` | 1 hour |
+| Report generation | `stats/report.ts` | 1 hour |
+
+### Total Effort
+
+| Scope | Phases | Hours |
+|-------|--------|-------|
+| **MVP (Option A)** | 2a + 2b + 2c (partial) + 2e | ~18 hours |
+| **Multi-Dataset (Option B)** | 2a + 2b + 2c + 2d (partial) + 2e | ~30 hours |
+| **Full Suite (Option C)** | All phases | ~33 hours |
 
 ---
 
-## Priority Implementation Order
+## CLI Usage
 
-### Phase 2a: Core Infrastructure (Week 1)
-
-1. **Add BEIR schema types** (`beir-schema.ts`)
-2. **Add parquet loading** (via Python conversion or parquetjs)
-3. **Add Hugging Face download support** (extend `download.ts`)
-
-### Phase 2b: CoIR Integration (Week 2)
-
-1. **Implement CoIR loader** (`coir.ts`)
-2. **Add CoIR benchmark packs** (start with `apps` and `cosqa`)
-3. **Test with existing nDCG metric**
-
-### Phase 2c: Additional Benchmarks (Week 3)
-
-1. **Add CodeSearchNet loader** (`codesearchnet.ts`)
-2. **Add RepoBench loader** (`repobench.ts`)
-3. **Create unified evaluation runner**
-
----
-
-## CLI Usage (Target API)
+### Basic Evaluation
 
 ```bash
-# Run CoIR benchmark with code-chunk
-memorybench eval \
-  --benchmark coir-apps \
-  --provider code-chunk \
-  --metrics ndcg_at_10 recall_at_10 precision_at_10 \
-  --limit 100
-
-# Compare chunkers on CodeSearchNet
-memorybench eval \
-  --benchmark codesearchnet-python \
-  --providers code-chunk,chonkie,fixed-500 \
-  --metrics ndcg_at_10 \
-  --output results/codesearchnet-comparison.json
-
-# Full matrix evaluation
-memorybench eval \
-  --benchmarks coir-apps,coir-cosqa,codesearchnet-python \
-  --providers code-chunk,chonkie,fixed-500,fixed-1000 \
-  --embeddings openai-small,voyage-code-3,nomic-embed-code \
-  --metrics ndcg_at_5 ndcg_at_10 recall_at_10 mrr \
-  --output results/full-matrix.json
-```
-
----
-
-## Testing Plan
-
-### Unit Tests
-
-```typescript
-// test/benchmarks/loaders/coir.test.ts
-
-describe("CoIR Loader", () => {
-  it("loads apps dataset with correct schema", async () => {
-    const { items, corpus, qrels } = await loadCoIRDataset("apps", { limit: 10 });
-
-    expect(items.length).toBe(10);
-    expect(items[0].metadata.relevantIds).toBeDefined();
-    expect(corpus.size).toBeGreaterThan(0);
-  });
-
-  it("builds correct qrels mapping", async () => {
-    const { qrels } = await loadCoIRDataset("apps", { limit: 10 });
-
-    // Each query should have at least one relevant document
-    for (const [queryId, relevantIds] of qrels) {
-      expect(relevantIds.size).toBeGreaterThan(0);
-    }
-  });
-});
-```
-
-### Integration Tests
-
-```bash
-# Test end-to-end with small dataset
+# Run RepoEval with code-chunk-ast
 bun run cli eval \
-  --benchmark coir-cosqa \
-  --provider aqrag \
-  --metrics ndcg_at_10 \
-  --limit 5 \
-  --verbose
+  --benchmarks repoeval \
+  --providers code-chunk-ast \
+  --output results/repoeval-ast.json
+```
+
+### Provider Comparison
+
+```bash
+# Compare all MVP providers on RepoEval
+bun run cli eval \
+  --benchmarks repoeval \
+  --providers code-chunk-ast,code-chunk-fixed,chonkie-code,chonkie-recursive \
+  --runs 3 \
+  --stats \
+  --output results/repoeval-comparison.json
+```
+
+### Embedding Comparison
+
+```bash
+# Test providers across both embeddings
+bun run cli eval \
+  --benchmarks repoeval \
+  --providers code-chunk-ast,code-chunk-fixed \
+  --embeddings voyage-code-3,openai-small \
+  --output results/embedding-comparison.json
+```
+
+### Multi-Benchmark Evaluation
+
+```bash
+# Run on multiple true-chunking benchmarks
+bun run cli eval \
+  --benchmarks repoeval,repobench-r,swebench-lite \
+  --providers code-chunk-ast,code-chunk-fixed,chonkie-code \
+  --runs 3 \
+  --stats \
+  --output results/multi-benchmark.json
 ```
 
 ---
 
-## Dependencies
+## Expected Output Format
 
-### Required
+### JSON Results
 
-| Package | Purpose | Version |
-|---------|---------|---------|
-| None | Uses existing memorybench infrastructure | - |
+```json
+{
+  "meta": {
+    "timestamp": "2025-01-15T10:30:00Z",
+    "benchmarks": ["repoeval"],
+    "providers": ["code-chunk-ast", "code-chunk-fixed", "chonkie-code", "chonkie-recursive"],
+    "embedding": "voyage-code-3",
+    "runs": 3
+  },
+  "results": {
+    "repoeval": {
+      "code-chunk-ast": {
+        "ndcg_at_10": { "mean": 0.0, "std": 0.0, "ci_lower": 0.0, "ci_upper": 0.0 },
+        "recall_at_10": { "mean": 0.0, "std": 0.0, "ci_lower": 0.0, "ci_upper": 0.0 },
+        "mrr": { "mean": 0.0, "std": 0.0, "ci_lower": 0.0, "ci_upper": 0.0 }
+      }
+    }
+  },
+  "comparisons": {
+    "code-chunk-ast_vs_code-chunk-fixed": {
+      "ndcg_at_10": { "difference": 0.0, "p_value": 0.0, "effect_size": 0.0, "significant": false }
+    }
+  }
+}
+```
 
-### Optional (for parquet support)
+---
 
-| Package | Purpose | Notes |
-|---------|---------|-------|
-| `parquetjs` | Pure JS parquet reader | ~2MB, no native deps |
-| `@duckdb/duckdb-wasm` | Fast parquet reader | Larger, but faster |
+## Success Criteria
 
-**Recommendation**: Start with Python conversion on download, add native parquet later if needed.
+### Minimum Viable Results
+
+| Criterion | Requirement |
+|-----------|-------------|
+| Runs on RepoEval | All 4 providers complete |
+| Statistical validity | 3 runs per config, 95% CIs reported |
+| Reproducible | Same results on re-run |
+
+### Publication-Quality Results
+
+| Criterion | Requirement |
+|-----------|-------------|
+| Multiple benchmarks | ≥3 true-chunking benchmarks |
+| Statistical significance | p < 0.05 (Bonferroni-corrected) |
+| Effect sizes | Cohen's d reported |
+| Multi-embedding | Results with ≥2 embedding models |
 
 ---
 
 ## References
 
-1. **CoIR Paper**: [arXiv:2407.02883](https://arxiv.org/abs/2407.02883)
-2. **CodeSearchNet Paper**: [arXiv:1909.09436](https://arxiv.org/abs/1909.09436)
-3. **RepoBench Paper**: [arXiv:2306.03091](https://arxiv.org/abs/2306.03091)
-4. **BEIR Benchmark**: [github.com/beir-cellar/beir](https://github.com/beir-cellar/beir)
-5. **MTEB Leaderboard**: [huggingface.co/spaces/mteb/leaderboard](https://huggingface.co/spaces/mteb/leaderboard)
+### Benchmarks
+1. **RepoEval/RepoCoder**: [arXiv:2303.12570](https://arxiv.org/abs/2303.12570)
+2. **RepoBench**: [arXiv:2306.03091](https://arxiv.org/abs/2306.03091)
+3. **SWE-bench**: [arXiv:2310.06770](https://arxiv.org/abs/2310.06770)
+4. **CrossCodeEval**: [arXiv:2310.11248](https://arxiv.org/abs/2310.11248)
+
+### Chunkers
+5. **Chonkie**: [GitHub](https://github.com/bhavnicksm/chonkie)
+6. **LangChain**: [docs.langchain.com](https://docs.langchain.com)
+7. **LlamaIndex**: [docs.llamaindex.ai](https://docs.llamaindex.ai)
+
+### Statistical Methods
+8. Efron, B. (1979). Bootstrap methods: Another look at the jackknife.
+9. Cohen, J. (1988). Statistical power analysis for the behavioral sciences.
 
 ---
 
 ## Summary
 
-| Task | Files | Effort |
-|------|-------|--------|
-| BEIR schema types | `beir-schema.ts` | 30 min |
-| HuggingFace download support | `download.ts` | 1 hour |
-| Parquet loading | `parquet.ts` or Python conversion | 1-2 hours |
-| CoIR loader | `coir.ts` | 2 hours |
-| CoIR packs (10 datasets) | `packs/coir/*.ts` | 3 hours |
-| CodeSearchNet loader + pack | `codesearchnet.ts`, pack | 2 hours |
-| RepoBench loader + pack | `repobench.ts`, pack | 2 hours |
-| Tests | `*.test.ts` | 2 hours |
-| **Total** | | **~14 hours** |
+| Dimension | Coverage |
+|-----------|----------|
+| **Benchmarks** | 4 true-chunking (RepoEval, RepoBench-R, SWE-bench Lite, CrossCodeEval) |
+| **Providers** | 4 MVP (code-chunk-ast, code-chunk-fixed, chonkie-code, chonkie-recursive) |
+| **Embeddings** | 2 models (voyage-code-3, openai-small) |
+| **Statistics** | Bootstrap CIs, paired t-tests, effect sizes |
+
+**Key Decision:** Pre-chunked benchmarks (CoIR, CodeSearchNet, MTEB, CodeRAG-Bench) are **excluded** because they test embedding quality, not chunking quality. This suite focuses exclusively on **true-chunking benchmarks** where chunking decisions directly impact results.

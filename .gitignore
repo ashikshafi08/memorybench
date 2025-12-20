@@ -35,6 +35,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Datasets
 datasets/
+data/
 
 # Results
 results/
@@ -49,3 +50,4 @@ __pycache__/
 *$py.class
 *.so
 .Python
+
