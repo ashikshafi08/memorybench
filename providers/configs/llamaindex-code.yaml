@@ -1,0 +1,46 @@
+# LlamaIndex Code Provider
+#
+# Tree-sitter based semantic chunking using LlamaIndex's CodeSplitter.
+# Respects code structure (functions, classes, etc.).
+#
+# Requirements:
+#   Python 3.10+
+#   pip install llama-index-core
+#
+# Environment:
+#   LLAMAINDEX_PYTHON_PATH - Path to Python with LlamaIndex installed (default: python3)
+
+name: llamaindex-code
+displayName: LlamaIndex Code
+description: Tree-sitter semantic chunker via LlamaIndex CodeSplitter
+type: local
+adapter: ./adapters/generic-chunker.ts
+
+tags:
+  - chunking
+  - semantic
+  - llamaindex
+  - code
+
+# Scoping for multiple benchmark runs
+scoping:
+  strategy: containerTags
+  runIdFormat: "${benchmarkId}-${runId}"
+
+# Chunking configuration
+local:
+  chunking:
+    size: 1500  # Characters
+    strategy: semantic
+
+  # Embedding configuration (defaults to OpenAI)
+  embedding:
+    provider: openai
+    model: text-embedding-3-small
+
+# Capabilities
+capabilities:
+  supportsChunks: true
+  supportsBatch: true
+  supportsMetadata: true
+  supportsRerank: false

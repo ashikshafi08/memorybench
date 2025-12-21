@@ -24,6 +24,8 @@ export interface RunOptions {
 	start?: number;
 	end?: number;
 	questionType?: string;
+	/** Task type for RepoEval: "function" (default), "line", or "api" */
+	taskType?: "function" | "line" | "api";
 	concurrency?: number;
 	runId?: string;
 	resume?: boolean;
@@ -182,6 +184,7 @@ export class BenchmarkRunner {
 				start: options.start,
 				end: options.end,
 				questionType: options.questionType,
+				taskType: options.taskType,
 			});
 
 			// Generate run tag for scoping

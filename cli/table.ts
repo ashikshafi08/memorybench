@@ -22,6 +22,8 @@ import type { EvalResult } from "../core/config.ts";
  */
 const PROVIDER_ORDER = [
 	"code-chunk-ast",
+	"llamaindex-code",
+	"langchain-code",
 	"chonkie-code",
 	"chonkie-recursive",
 	"code-chunk-fixed",
@@ -35,6 +37,8 @@ const DISPLAY_NAMES: Record<string, string> = {
 	"code-chunk-fixed": "Fixed",
 	"chonkie-code": "Chonkie",
 	"chonkie-recursive": "Chonkie-R",
+	"llamaindex-code": "LlamaIndex",
+	"langchain-code": "LangChain",
 };
 
 /**

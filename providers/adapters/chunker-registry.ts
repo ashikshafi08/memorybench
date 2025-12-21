@@ -13,6 +13,8 @@
  */
 
 import type { ChonkieChunkResult } from "./chonkie-bridge.ts";
+import type { LlamaIndexChunkResult } from "./llamaindex-bridge.ts";
+import type { LangChainChunkResult } from "./langchain-bridge.ts";
 
 /**
  * Result of chunking a file.
@@ -206,7 +208,68 @@ registerChunker({
 //   - code-chunk-fixed (baseline)
 //   - chonkie-code (tree-sitter competitor)
 //   - chonkie-recursive (fallback baseline)
+//   - llamaindex-code (LlamaIndex CodeSplitter)
+//   - langchain-code (LangChain RecursiveCharacterTextSplitter)
 // ============================================================================
+
+/**
+ * LlamaIndex CodeSplitter chunker
+ * Python-based semantic chunker using tree-sitter via LlamaIndex.
+ */
+registerChunker({
+	name: "llamaindex-code",
+	preflight: async () => {
+		const { isLlamaIndexAvailable } = await import("./llamaindex-bridge.ts");
+		const pythonPath = process.env.LLAMAINDEX_PYTHON_PATH || "python3";
+		if (!(await isLlamaIndexAvailable(pythonPath))) {
+			throw new Error(
+				"LlamaIndex not available. Install with: pip install llama-index-core",
+			);
+		}
+	},
+	chunkFn: async (content, filepath, config) => {
+		const { callLlamaIndex } = await import("./llamaindex-bridge.ts");
+		const chunks = await callLlamaIndex(filepath, content, {
+			chunkSize: config.size ?? 1500,
+		});
+		return chunks.map((c: LlamaIndexChunkResult) => ({
+			content: c.text,
+			startLine: c.startLine,
+			endLine: c.endLine,
+			id: c.id,
+		}));
+	},
+});
+
+/**
+ * LangChain RecursiveCharacterTextSplitter chunker
+ * Python-based language-aware chunker using LangChain.
+ */
+registerChunker({
+	name: "langchain-code",
+	preflight: async () => {
+		const { isLangChainAvailable } = await import("./langchain-bridge.ts");
+		const pythonPath = process.env.LANGCHAIN_PYTHON_PATH || "python3";
+		if (!(await isLangChainAvailable(pythonPath))) {
+			throw new Error(
+				"LangChain not available. Install with: pip install langchain-text-splitters",
+			);
+		}
+	},
+	chunkFn: async (content, filepath, config) => {
+		const { callLangChain } = await import("./langchain-bridge.ts");
+		const chunks = await callLangChain(filepath, content, {
+			chunkSize: config.size ?? 1500,
+			overlap: config.overlap ?? 100,
+		});
+		return chunks.map((c: LangChainChunkResult) => ({
+			content: c.text,
+			startLine: c.startLine,
+			endLine: c.endLine,
+			id: c.id,
+		}));
+	},
+});
 
 // ============================================================================
 // Helper Functions (moved from code-chunk-fixed.ts)

@@ -16,6 +16,8 @@ export interface LoadOptions {
 	start?: number;
 	end?: number;
 	language?: string;
+	/** Task type for RepoEval: "function" (default), "line", or "api" */
+	taskType?: "function" | "line" | "api";
 }
 
 /**
@@ -47,8 +49,11 @@ export async function loadCodeRetrievalData(
 	// Infer language from config if not provided
 	const language = options?.language ?? inferLanguageFromConfig(config);
 
-	// Load raw tasks
-	let tasks = await dataset.loadTasks({ language });
+	// Load raw tasks (pass taskType for RepoEval)
+	let tasks = await dataset.loadTasks({ 
+		language, 
+		taskType: options?.taskType,
+	});
 
 	// For datasets that do expensive repo cloning (repoeval, swebench-lite),
 	// apply filters before conversion to avoid unnecessary cloning

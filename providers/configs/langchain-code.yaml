@@ -1,0 +1,47 @@
+# LangChain Code Provider
+#
+# Language-aware chunking using LangChain's RecursiveCharacterTextSplitter.
+# Uses language-specific separators for code splitting.
+#
+# Requirements:
+#   Python 3.10+
+#   pip install langchain-text-splitters
+#
+# Environment:
+#   LANGCHAIN_PYTHON_PATH - Path to Python with LangChain installed (default: python3)
+
+name: langchain-code
+displayName: LangChain Code
+description: Language-aware recursive chunker via LangChain
+type: local
+adapter: ./adapters/generic-chunker.ts
+
+tags:
+  - chunking
+  - recursive
+  - langchain
+  - code
+
+# Scoping for multiple benchmark runs
+scoping:
+  strategy: containerTags
+  runIdFormat: "${benchmarkId}-${runId}"
+
+# Chunking configuration
+local:
+  chunking:
+    size: 1500  # Characters
+    overlap: 100  # Character overlap between chunks
+    strategy: fixed  # LangChain uses language-aware separators internally
+
+  # Embedding configuration (defaults to OpenAI)
+  embedding:
+    provider: openai
+    model: text-embedding-3-small
+
+# Capabilities
+capabilities:
+  supportsChunks: true
+  supportsBatch: true
+  supportsMetadata: true
+  supportsRerank: false

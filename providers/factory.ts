@@ -50,6 +50,8 @@ providerByNameRegistry.set("code-chunk-fixed", GenericChunkerProvider);
 providerByNameRegistry.set("code-chunk-ast", GenericChunkerProvider);
 providerByNameRegistry.set("chonkie-code", GenericChunkerProvider);
 providerByNameRegistry.set("chonkie-recursive", GenericChunkerProvider);
+providerByNameRegistry.set("llamaindex-code", GenericChunkerProvider);
+providerByNameRegistry.set("langchain-code", GenericChunkerProvider);
 
 /**
  * Create a provider instance from config.

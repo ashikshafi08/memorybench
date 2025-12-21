@@ -213,6 +213,10 @@ Examples:
   memorybench describe longmemeval
   memorybench eval --benchmarks longmemeval --providers supermemory --limit 10
   memorybench eval --benchmarks rag-template --providers supermemory --metrics accuracy f1 recall_at_5
+  memorybench eval --benchmarks repoeval --providers code-chunk-ast --task-type function  (default)
+  memorybench eval --benchmarks repoeval --providers code-chunk-ast --task-type line
+  memorybench eval --benchmarks repoeval --providers code-chunk-ast --task-type api
+  memorybench eval --benchmarks repoeval --providers code-chunk-ast --policy all  (runs both 1-hop and H-hop)
   memorybench table --run <runId> --benchmark repoeval
   memorybench results run-20251216-123456-abc1
   memorybench export run-20251216-123456-abc1 --format csv --output results.csv
@@ -371,9 +375,13 @@ async function downloadCommand(
 	const { getDataset, getDatasetNames } = await import(
 		"../benchmarks/loaders/download/dataset-registry.ts"
 	);
+	const { getAvailableTaskTypes } = await import(
+		"../benchmarks/loaders/download/yaml-config.ts"
+	);
 
 	const benchmarkNames = toStringArray(options.benchmarks) ?? toStringArray(options.benchmark);
 	const allFlag = options.all === true;
+	const taskType = options["task-type"] as "function" | "line" | "api" | "all" | undefined;
 
 	// Determine which datasets to download
 	let datasetsToDownload: string[];
@@ -393,11 +401,16 @@ Usage:
   memorybench download --benchmarks <names>  Download multiple datasets
   memorybench download --all                 Download all datasets
 
+Options:
+  --task-type <type>   Task type for RepoEval: function (default), line, api, all
+
 Available datasets:
 ${getDatasetNames().map((n: string) => `  - ${n}`).join("\n")}
 
 Examples:
   memorybench download --benchmark repoeval
+  memorybench download --benchmark repoeval --task-type line
+  memorybench download --benchmark repoeval --task-type all
   memorybench download --benchmarks repoeval repobench-r
   memorybench download --all
 `);
@@ -414,13 +427,27 @@ Examples:
 			continue;
 		}
 
-		if (dataset.isAvailable()) {
+		// Check for task types (RepoEval specific)
+		const availableTaskTypes = getAvailableTaskTypes(name);
+		
+		if (availableTaskTypes.length > 0 && taskType === "all") {
+			// Download all task types
+			for (const tt of availableTaskTypes) {
+				console.log(`📥 ${name} (${tt}): Downloading...`);
+				try {
+					await dataset.download({ taskType: tt as "function" | "line" | "api" });
+					console.log(`✅ ${name} (${tt}): Download complete`);
+				} catch (error) {
+					console.error(`❌ ${name} (${tt}): Download failed - ${error}`);
+				}
+			}
+		} else if (dataset.isAvailable() && !taskType) {
 			console.log(`✅ ${name}: Already downloaded`);
 		} else {
-			console.log(`📥 ${name}: Downloading...`);
+			console.log(`📥 ${name}${taskType ? ` (${taskType})` : ""}: Downloading...`);
 			try {
-				await dataset.download();
-				console.log(`✅ ${name}: Download complete`);
+				await dataset.download(taskType ? { taskType: taskType as "function" | "line" | "api" } : undefined);
+				console.log(`✅ ${name}${taskType ? ` (${taskType})` : ""}: Download complete`);
 			} catch (error) {
 				console.error(`❌ ${name}: Download failed - ${error}`);
 			}
@@ -478,13 +505,17 @@ async function evalCommand(
 		? parseInt(options.concurrency as string, 10)
 		: 10;
 	const questionType = options["question-type"] as string | undefined;
+	const taskType = options["task-type"] as "function" | "line" | "api" | undefined;
 	const runId = options["run-id"] as string | undefined;
 	const outputDir = (options.output as string) ?? "./results";
 	const metrics = toStringArray(options.metrics);
 	
-	// Parse policy option (1-hop or H-hop)
+	// Parse policy option (1-hop, H-hop, or all)
 	const policyStr = (options.policy as string)?.toLowerCase();
-	const policy = policyStr === "h-hop" ? "H-hop" : "1-hop";
+	const policies: ("1-hop" | "H-hop")[] =
+		policyStr === "all" ? ["1-hop", "H-hop"] :
+		policyStr === "h-hop" ? ["H-hop"] :
+		["1-hop"];
 
 	// Validate metrics if provided
 	if (metrics && metrics.length > 0) {
@@ -528,39 +559,46 @@ async function evalCommand(
 ├─────────────────────────────────────────────────────────────────┤
 │ Benchmarks: ${benchmarks.join(", ").padEnd(49)} │
 │ Providers:  ${providers.join(", ").padEnd(49)} │
-│ Policy:     ${policy.padEnd(49)} │
+│ Policies:   ${policies.join(", ").padEnd(49)} │
 │ Started:    ${new Date().toISOString().padEnd(49)} │
 ╰─────────────────────────────────────────────────────────────────╯
 `);
 
 	try {
-		// Run evaluation
-		const result = await runner.run({
-			benchmarks,
-			providers,
-			limit,
-			start,
-			end,
-			questionType,
-			concurrency,
-			runId,
-			outputDir,
-			metrics,
-			policy,
-		});
+		// Run evaluation for each policy
+		for (const policy of policies) {
+			if (policies.length > 1) {
+				console.log(`\n📋 Running with policy: ${policy}\n`);
+			}
 
-		// Clear progress line
-		console.log("\n");
+			const result = await runner.run({
+				benchmarks,
+				providers,
+				limit,
+				start,
+				end,
+				questionType,
+				taskType,
+				concurrency,
+				runId: runId ? `${runId}-${policy}` : undefined,
+				outputDir,
+				metrics,
+				policy,
+			});
 
-		// Save results
-		resultsStore.saveRun(result);
+			// Clear progress line
+			console.log("\n");
 
-		// Print results in table format
-		printResultsTable(result);
+			// Save results
+			resultsStore.saveRun(result);
 
-		console.log(`\n✅ Run ID: ${result.runId}`);
-		console.log(`   Results saved to: ${outputDir}/results.db`);
-		console.log(`   View results: memorybench results ${result.runId}\n`);
+			// Print results in table format
+			printResultsTable(result);
+
+			console.log(`\n✅ Run ID: ${result.runId}`);
+			console.log(`   Results saved to: ${outputDir}/results.db`);
+			console.log(`   View results: memorybench results ${result.runId}\n`);
+		}
 	} catch (error) {
 		console.error("\n❌ Evaluation failed:", error);
 		process.exit(1);

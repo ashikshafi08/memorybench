@@ -24,6 +24,8 @@ export async function loadBenchmarkData(
 		start?: number;
 		end?: number;
 		questionType?: string;
+		/** Task type for RepoEval: "function" (default), "line", or "api" */
+		taskType?: "function" | "line" | "api";
 	},
 ): Promise<BenchmarkItem[]> {
 	// Special handling for code retrieval benchmarks with custom loaders

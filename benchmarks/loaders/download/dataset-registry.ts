@@ -4,7 +4,7 @@
  * Consolidated dataset definitions for code retrieval benchmarks.
  * Each dataset has custom download logic, task parsing, and context building.
  *
- * Replaces 4 separate download files with a unified registry.
+ * Configuration is loaded from datasets.yaml for URLs, repos, and task types.
  */
 
 import { existsSync } from "node:fs";
@@ -22,6 +22,15 @@ import {
 	fetchHuggingFaceDataset,
 	fetchHuggingFaceDatasetViaParquet,
 } from "./download-utils.ts";
+import {
+	getDatasetConfig,
+	getRepoListForTaskType,
+	getTaskTypeConfig,
+	getSourceConfig,
+	getLanguageConfig,
+	getSupportedLanguages,
+	getConfiguredDatasetNames,
+} from "./yaml-config.ts";
 
 // ============================================================================
 // Types
@@ -36,10 +45,14 @@ export interface DatasetDefinition {
 	isAvailable: () => boolean;
 
 	/** Download dataset if not present */
-	download: () => Promise<void>;
+	download: (options?: { taskType?: "function" | "line" | "api" }) => Promise<void>;
 
 	/** Load raw tasks from dataset */
-	loadTasks: (options?: { language?: string }) => Promise<RawTask[]>;
+	loadTasks: (options?: { 
+		language?: string;
+		/** Task type for RepoEval: "function" (default), "line", or "api" */
+		taskType?: "function" | "line" | "api";
+	}) => Promise<RawTask[]>;
 
 	/** Convert task to BenchmarkItem with contexts */
 	toBenchmarkItem: (task: RawTask, options?: { reposDir?: string }) => Promise<BenchmarkItem>;
@@ -54,14 +67,7 @@ export interface RawTask {
 // RepoEval Dataset
 // ============================================================================
 
-const REPOS_FUNCTION = [
-	"amazon-science_patchcore-inspection",
-	"deepmind_tracr",
-	"facebookresearch_omnivore",
-	"google_lightweight_mmm",
-	"lucidrains_imagen-pytorch",
-	"maxhumber_redframes",
-] as const;
+// Repo list now loaded from datasets.yaml via getRepoListForTaskType()
 
 interface RepoEvalRawTask extends RawTask {
 	prompt: string;
@@ -76,7 +82,8 @@ interface RepoEvalRawTask extends RawTask {
 }
 
 function createRepoEvalDataset(): DatasetDefinition {
-	const dataDir = () => process.env.REPOEVAL_DATA_DIR || join(DATASETS_BASE_DIR, "repoeval");
+	const config = getDatasetConfig("repoeval")!;
+	const dataDir = () => process.env[config.envVar] || join(DATASETS_BASE_DIR, "repoeval");
 	const datasetsDir = () => join(dataDir(), "datasets");
 	// Note: The function_level.zip extracts repos directly to repositories/, not repositories/function_level/
 	const reposDir = () => join(dataDir(), "repositories");
@@ -84,23 +91,27 @@ function createRepoEvalDataset(): DatasetDefinition {
 	return {
 		name: "repoeval",
 		dataDir: dataDir(),
-		envVar: "REPOEVAL_DATA_DIR",
+		envVar: config.envVar,
 
 		isAvailable: () => existsSync(datasetsDir()) && existsSync(reposDir()),
 
-		download: async () => {
-			console.log("Downloading RepoEval benchmark data...\n");
+		download: async (options) => {
+			const taskType = options?.taskType ?? "function";
+			console.log(`Downloading RepoEval benchmark data (task type: ${taskType})...\n`);
 
-			// Download datasets
+			// Download datasets (shared across all task types)
 			if (!existsSync(datasetsDir())) {
-				const datasetsUrl = "https://github.com/microsoft/CodeT/raw/main/RepoCoder/datasets/datasets.zip";
-				await downloadAndExtractZip(datasetsUrl, datasetsDir());
+				const datasetsSource = getSourceConfig("repoeval", "datasets")!;
+				await downloadAndExtractZip(datasetsSource.url!, datasetsDir());
 			}
 
-			// Download repositories
-			if (!existsSync(reposDir())) {
-				const reposUrl = "https://github.com/Veronicium/repoeval_debug/raw/main/function_level.zip";
-				await downloadAndExtractZip(reposUrl, join(dataDir(), "repositories"));
+			// Download repositories for specific task type
+			const taskConfig = getTaskTypeConfig("repoeval", taskType);
+			if (taskConfig) {
+				const reposDest = join(dataDir(), taskConfig.repos.extractTo!);
+				if (!existsSync(reposDest)) {
+					await downloadAndExtractZip(taskConfig.repos.url!, reposDest);
+				}
 			}
 
 			console.log("\nDownload complete!");
@@ -108,7 +119,9 @@ function createRepoEvalDataset(): DatasetDefinition {
 
 		loadTasks: async (options) => {
 			const contextLength = options?.language || "2k";
-			const fileName = `function_level_completion_${contextLength}_context_codex.test.jsonl`;
+			// Support different task types: function (default), line, api
+			const taskType = options?.taskType || "function";
+			const fileName = `${taskType}_level_completion_${contextLength}_context_codex.test.jsonl`;
 			const filePath = join(datasetsDir(), fileName);
 
 			if (!existsSync(filePath)) {
@@ -120,10 +133,25 @@ function createRepoEvalDataset(): DatasetDefinition {
 			const tasks: RepoEvalRawTask[] = [];
 			const repo2idx: Record<string, number> = {};
 
+			// Get valid repos from YAML config
+			const validRepos = new Set(getRepoListForTaskType("repoeval", taskType));
+
 			for (const line of lines) {
 				const task = JSON.parse(line) as RepoEvalRawTask;
 				const repo = task.metadata.task_id.replace("--", "_").split("/")[0];
-				if (!repo || !REPOS_FUNCTION.includes(repo as any)) continue;
+				if (!repo) continue;
+				
+				// Check if repo is in the valid list for this task type
+				// If validRepos is empty, accept any downloaded repo
+				if (validRepos.size > 0 && !validRepos.has(repo)) {
+					continue;
+				}
+
+				// Check if repo is downloaded
+				const repoPath = join(reposDir(), repo);
+				if (!existsSync(repoPath)) {
+					continue; // Repo not downloaded
+				}
 
 				if (!(repo in repo2idx)) repo2idx[repo] = 0;
 
@@ -196,12 +224,13 @@ interface RepoBenchRRawTask extends RawTask {
 }
 
 function createRepoBenchRDataset(): DatasetDefinition {
-	const dataDir = () => process.env.REPOBENCH_DATA_DIR || join(DATASETS_BASE_DIR, "repobench-r");
+	const config = getDatasetConfig("repobench-r")!;
+	const dataDir = () => process.env[config.envVar] || join(DATASETS_BASE_DIR, "repobench-r");
 
 	return {
 		name: "repobench-r",
 		dataDir: dataDir(),
-		envVar: "REPOBENCH_DATA_DIR",
+		envVar: config.envVar,
 
 		isAvailable: () => {
 			const pythonPath = join(dataDir(), "python.jsonl");
@@ -212,24 +241,25 @@ function createRepoBenchRDataset(): DatasetDefinition {
 		download: async () => {
 			console.log("Downloading RepoBench-R benchmark data...\n");
 
-			const languages = ["python", "java"] as const;
-			for (let i = 0; i < languages.length; i++) {
-				const lang = languages[i];
-				const destPath = join(dataDir(), `${lang}.jsonl`);
+			// Get languages from YAML config
+			const languages = getSupportedLanguages("repobench-r");
+			for (const lang of languages) {
+				const langConfig = getLanguageConfig("repobench-r", lang);
+				if (!langConfig) continue;
+
+				const destPath = join(dataDir(), langConfig.outputFile);
 				if (existsSync(destPath)) {
-					console.log(`${lang}.jsonl already exists, skipping...`);
+					console.log(`${langConfig.outputFile} already exists, skipping...`);
 					continue;
 				}
 
 				try {
-					// Use Parquet API (no rate limiting) instead of rows API
-					// Dataset: tianyang/repobench_python_v1.1, tianyang/repobench_java_v1.1
-					// Config: "default", Split: "cross_file_first"
-					const datasetName = `tianyang/repobench_${lang}_v1.1`;
+					// Use Parquet API (no rate limiting) from YAML config
+					const source = langConfig.source;
 					const tasks = await fetchHuggingFaceDatasetViaParquet({
-						dataset: datasetName,
-						config: "default",
-						split: "cross_file_first",
+						dataset: source.dataset!,
+						config: source.config ?? "default",
+						split: source.split ?? "test",
 					});
 
 					// Convert to JSONL format (one JSON object per line)
@@ -240,7 +270,7 @@ function createRepoBenchRDataset(): DatasetDefinition {
 					const { mkdir, writeFile } = await import("node:fs/promises");
 					await mkdir(dataDir(), { recursive: true });
 					await writeFile(destPath, jsonlContent);
-					console.log(`Saved ${lang}.jsonl with ${tasks.length} samples`);
+					console.log(`Saved ${langConfig.outputFile} with ${tasks.length} samples`);
 				} catch (error) {
 					console.warn(`Failed to download ${lang}: ${error}`);
 				}
@@ -349,12 +379,13 @@ function parseCrossFileContext(raw: string): Array<{ file: string; content: stri
 }
 
 function createCrossCodeEvalDataset(): DatasetDefinition {
-	const dataDir = () => process.env.CROSSCODEEVAL_DATA_DIR || join(DATASETS_BASE_DIR, "crosscodeeval");
+	const config = getDatasetConfig("crosscodeeval")!;
+	const dataDir = () => process.env[config.envVar] || join(DATASETS_BASE_DIR, "crosscodeeval");
 
 	return {
 		name: "crosscodeeval",
 		dataDir: dataDir(),
-		envVar: "CROSSCODEEVAL_DATA_DIR",
+		envVar: config.envVar,
 
 		isAvailable: () => existsSync(join(dataDir(), "python.jsonl")),
 
@@ -366,21 +397,21 @@ function createCrossCodeEvalDataset(): DatasetDefinition {
 			const { mkdir, writeFile, readdir, copyFile } = await import("node:fs/promises");
 			await mkdir(dataDir(), { recursive: true });
 
-			// Check if all language files already exist
-			const languages = ["python", "java", "typescript", "csharp"] as const;
+			// Get languages from YAML config
+			const languages = getSupportedLanguages("crosscodeeval");
 			const allExist = languages.every((lang) => existsSync(join(dataDir(), `${lang}.jsonl`)));
 			if (allExist) {
 				console.log("All CrossCodeEval data files already exist, skipping download.");
 				return;
 			}
 
-			// Download the tar.xz archive
-			const archiveUrl = "https://raw.githubusercontent.com/amazon-science/cceval/main/data/crosscodeeval_data.tar.xz";
+			// Download the tar.xz archive from YAML config
+			const source = config.source!;
 			const archivePath = join(dataDir(), "crosscodeeval_data.tar.xz");
 
 			if (!existsSync(archivePath)) {
 				console.log("Downloading CrossCodeEval archive from GitHub...");
-				const response = await fetch(archiveUrl);
+				const response = await fetch(source.url!);
 				if (!response.ok) {
 					throw new Error(`Failed to fetch archive: ${response.status} ${response.statusText}`);
 				}
@@ -402,17 +433,20 @@ function createCrossCodeEvalDataset(): DatasetDefinition {
 				throw new Error(`Failed to extract archive: ${stderr}`);
 			}
 
-			// Find and copy the JSONL files to the expected locations
-			// The archive extracts to {lang}/line_completion_oracle_bm25.jsonl (directly, not in crosscodeeval_data/)
+			// Find and copy the JSONL files using postExtract pattern from YAML
+			const postExtract = config.postExtract;
 			for (const lang of languages) {
-				const srcPath = join(dataDir(), lang, "line_completion_oracle_bm25.jsonl");
-				const destPath = join(dataDir(), `${lang}.jsonl`);
+				const srcPattern = postExtract?.pattern.replace("{lang}", lang) ?? `${lang}/line_completion_oracle_bm25.jsonl`;
+				const destPattern = postExtract?.outputPattern.replace("{lang}", lang) ?? `${lang}.jsonl`;
+				
+				const srcPath = join(dataDir(), srcPattern);
+				const destPath = join(dataDir(), destPattern);
 
 				if (existsSync(srcPath) && !existsSync(destPath)) {
 					await copyFile(srcPath, destPath);
 					const content = await readFile(destPath, "utf-8");
 					const lineCount = content.trim().split("\n").length;
-					console.log(`Saved ${lang}.jsonl with ${lineCount} samples`);
+					console.log(`Saved ${destPattern} with ${lineCount} samples`);
 				} else if (!existsSync(srcPath)) {
 					console.warn(`Source file not found: ${srcPath}`);
 				}
@@ -423,9 +457,9 @@ function createCrossCodeEvalDataset(): DatasetDefinition {
 
 		loadTasks: async (options) => {
 			const language = options?.language || "python";
-			const languages = language === "all"
-				? ["python", "java", "typescript", "csharp"]
-				: [language];
+			// Get languages from YAML config
+			const configLanguages = getSupportedLanguages("crosscodeeval");
+			const languages = language === "all" ? configLanguages : [language];
 			const tasks: CrossCodeEvalRawTask[] = [];
 
 			for (const lang of languages) {
@@ -555,31 +589,33 @@ const SKIP_DIRS = new Set([
 ]);
 
 function createSWEBenchLiteDataset(): DatasetDefinition {
-	const dataDir = () => process.env.SWEBENCH_DATA_DIR || join(DATASETS_BASE_DIR, "swebench-lite");
+	const config = getDatasetConfig("swebench-lite")!;
+	const dataDir = () => process.env[config.envVar] || join(DATASETS_BASE_DIR, "swebench-lite");
 	const reposDir = () => join(dataDir(), "repos");
 
 	return {
 		name: "swebench-lite",
 		dataDir: dataDir(),
-		envVar: "SWEBENCH_DATA_DIR",
+		envVar: config.envVar,
 
-		isAvailable: () => existsSync(join(dataDir(), "swebench-lite.json")),
+		isAvailable: () => existsSync(join(dataDir(), config.outputFile ?? "swebench-lite.json")),
 
 		download: async () => {
 			console.log("Downloading SWE-bench Lite benchmark data...\n");
 
-			const destPath = join(dataDir(), "swebench-lite.json");
+			const destPath = join(dataDir(), config.outputFile ?? "swebench-lite.json");
 			if (existsSync(destPath)) {
 				console.log("SWE-bench Lite data already exists, skipping...");
 				return;
 			}
 
-			// Use HuggingFace Datasets Server API to fetch JSON data
+			// Use HuggingFace Datasets Server API from YAML config
+			const source = config.source!;
 			const tasks = await fetchHuggingFaceDataset({
-				dataset: "princeton-nlp/SWE-bench_Lite",
-				config: "default",
-				split: "test",
-				maxRows: 10000, // SWE-bench Lite has ~323 instances
+				dataset: source.dataset!,
+				config: source.config ?? "default",
+				split: source.split ?? "test",
+				maxRows: source.maxRows ?? 10000,
 			});
 
 			const { mkdir, writeFile } = await import("node:fs/promises");
