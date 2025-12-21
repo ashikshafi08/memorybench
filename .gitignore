@@ -36,6 +36,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Datasets
 datasets/
 data/
+benchmarks/data/locomo10.json
 
 # Results
 results/
