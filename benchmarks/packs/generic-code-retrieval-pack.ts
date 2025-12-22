@@ -45,6 +45,14 @@ type GroundTruthData =
 	| { type: "files"; files: string[] };
 
 /**
+ * Options for relevance checking (passed from item metadata).
+ */
+interface RelevanceOptions {
+	/** IoU threshold for line-range relevance (0 = binary overlap, default) */
+	iouThreshold?: number;
+}
+
+/**
  * Configuration for a code retrieval dataset.
  */
 interface DatasetConfig {
@@ -58,13 +66,14 @@ interface DatasetConfig {
 	noGTMessage: string;
 
 	/** Check if a search result is relevant to the ground truth */
-	checkRelevance: (result: SearchResult, gt: GroundTruthData) => boolean;
+	checkRelevance: (result: SearchResult, gt: GroundTruthData, options?: RelevanceOptions) => boolean;
 
 	/** Compute score from top results and ground truth */
 	computeScore: (
 		topResults: SearchResult[],
 		gt: GroundTruthData,
-		checkRelevance: (result: SearchResult, gt: GroundTruthData) => boolean,
+		checkRelevance: (result: SearchResult, gt: GroundTruthData, options?: RelevanceOptions) => boolean,
+		options?: RelevanceOptions,
 	) => { score: number; correct: boolean; answer: string; reasoning: string };
 }
 
@@ -118,30 +127,36 @@ const DEFAULT_JACCARD_THRESHOLD = 0.7;
 function binaryHitAtKScore(
 	topResults: SearchResult[],
 	gt: GroundTruthData,
-	checkRelevance: (result: SearchResult, gt: GroundTruthData) => boolean,
+	checkRelevance: (result: SearchResult, gt: GroundTruthData, options?: RelevanceOptions) => boolean,
+	options?: RelevanceOptions,
 ): { score: number; correct: boolean; answer: string; reasoning: string } {
 	const topK = topResults.length;
-	const relevantChunks = topResults.filter((r) => checkRelevance(r, gt));
+	const relevantChunks = topResults.filter((r) => checkRelevance(r, gt, options));
 	const hasRelevant = relevantChunks.length > 0;
 
 	const gtInfo = gt.type === "location"
 		? `${gt.file}:${gt.startLine}-${gt.endLine}`
 		: `${gt.type}`;
 
+	const iouInfo = options?.iouThreshold 
+		? ` (IoU threshold: ${options.iouThreshold})`
+		: "";
+
 	return {
 		score: hasRelevant ? 1 : 0,
 		correct: hasRelevant,
 		answer: hasRelevant
-			? `Found ${relevantChunks.length} relevant chunk(s) in top-${topK}`
-			: `No relevant chunks in top-${topK}`,
+			? `Found ${relevantChunks.length} relevant chunk(s) in top-${topK}${iouInfo}`
+			: `No relevant chunks in top-${topK}${iouInfo}`,
 		reasoning: [
 			`Ground truth: ${gtInfo}`,
 			`Retrieved ${topResults.length} chunks`,
 			`Relevant chunks: ${relevantChunks.length}`,
+			options?.iouThreshold ? `IoU threshold: ${options.iouThreshold}` : null,
 			hasRelevant
 				? `First relevant at rank ${topResults.findIndex((r) => relevantChunks.includes(r)) + 1}`
 				: "No overlap with ground truth",
-		].join("\n"),
+		].filter(Boolean).join("\n"),
 	};
 }
 
@@ -151,7 +166,8 @@ function binaryHitAtKScore(
 function jaccardHitAtKScore(
 	topResults: SearchResult[],
 	gt: GroundTruthData,
-	checkRelevance: (result: SearchResult, gt: GroundTruthData) => boolean,
+	checkRelevance: (result: SearchResult, gt: GroundTruthData, options?: RelevanceOptions) => boolean,
+	_options?: RelevanceOptions,
 ): { score: number; correct: boolean; answer: string; reasoning: string } {
 	if (gt.type !== "snippets") {
 		return { score: 0, correct: false, answer: "[wrong gt type]", reasoning: "Expected snippets" };
@@ -196,7 +212,8 @@ function jaccardHitAtKScore(
 function coverageScore(
 	topResults: SearchResult[],
 	gt: GroundTruthData,
-	_checkRelevance: (result: SearchResult, gt: GroundTruthData) => boolean,
+	_checkRelevance: (result: SearchResult, gt: GroundTruthData, options?: RelevanceOptions) => boolean,
+	_options?: RelevanceOptions,
 ): { score: number; correct: boolean; answer: string; reasoning: string } {
 	if (gt.type !== "files") {
 		return { score: 0, correct: false, answer: "[wrong gt type]", reasoning: "Expected files" };
@@ -236,7 +253,8 @@ function coverageScore(
 function recallScore(
 	topResults: SearchResult[],
 	gt: GroundTruthData,
-	_checkRelevance: (result: SearchResult, gt: GroundTruthData) => boolean,
+	_checkRelevance: (result: SearchResult, gt: GroundTruthData, options?: RelevanceOptions) => boolean,
+	_options?: RelevanceOptions,
 ): { score: number; correct: boolean; answer: string; reasoning: string } {
 	if (gt.type !== "files") {
 		return { score: 0, correct: false, answer: "[wrong gt type]", reasoning: "Expected files" };
@@ -293,12 +311,15 @@ const DATASET_CONFIGS: Record<string, DatasetConfig> = {
 			return { type: "location", file: gt.file, startLine: gt.startLine ?? 1, endLine: gt.endLine ?? 1 };
 		},
 
-		checkRelevance: (result, gt): boolean => {
+		checkRelevance: (result, gt, options?): boolean => {
 			if (gt.type !== "location") return false;
 			const chunkLocation = getChunkLocation(result);
 			if (!chunkLocation) return false;
 			const targetSpan: LineSpan = { startLine: gt.startLine, endLine: gt.endLine };
-			return isLocationRelevant(chunkLocation, gt.file, targetSpan);
+			// Pass IoU threshold to relevance check
+			return isLocationRelevant(chunkLocation, gt.file, targetSpan, {
+				iouThreshold: options?.iouThreshold,
+			});
 		},
 
 		computeScore: binaryHitAtKScore,
@@ -429,7 +450,12 @@ export function createCodeRetrievalPack(datasetName: string): BenchmarkPack {
 			const topK = run.topK ?? 10;
 			const topResults = retrieved.slice(0, topK);
 
-			return config.computeScore(topResults, gt, config.checkRelevance);
+			// Extract relevance options from item metadata (set by loader from config)
+			const relevanceOptions: RelevanceOptions = {
+				iouThreshold: item.metadata?.iouThreshold as number | undefined,
+			};
+
+			return config.computeScore(topResults, gt, config.checkRelevance, relevanceOptions);
 		},
 
 		isRelevant(input: {
@@ -439,7 +465,13 @@ export function createCodeRetrievalPack(datasetName: string): BenchmarkPack {
 			const { item, result } = input;
 			const gt = config.getGroundTruth(item);
 			if (!gt) return false;
-			return config.checkRelevance(result, gt);
+			
+			// Extract relevance options from item metadata (set by loader from config)
+			const relevanceOptions: RelevanceOptions = {
+				iouThreshold: item.metadata?.iouThreshold as number | undefined,
+			};
+			
+			return config.checkRelevance(result, gt, relevanceOptions);
 		},
 	};
 }

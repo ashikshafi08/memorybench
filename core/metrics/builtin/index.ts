@@ -38,13 +38,14 @@ export * from "./bleu.ts";
 export * from "./rouge.ts";
 export * from "./file-recall.ts";
 export * from "./file-mrr.ts";
+export * from "./iou.ts";
 
 import { AccuracyMetric } from "./accuracy.ts";
 import { AccuracyByQuestionTypeMetric } from "./accuracy-by-type.ts";
 import { AccuracyByCategoryMetric } from "./accuracy-by-category.ts";
 import { AbstentionAccuracyMetric } from "./abstention-accuracy.ts";
-import { RecallAt5Metric, RecallAt10Metric } from "./recall.ts";
-import { PrecisionAt5Metric, PrecisionAt10Metric } from "./precision.ts";
+import { RecallAt1Metric, RecallAt3Metric, RecallAt5Metric, RecallAt10Metric } from "./recall.ts";
+import { PrecisionAt1Metric, PrecisionAt3Metric, PrecisionAt5Metric, PrecisionAt10Metric } from "./precision.ts";
 import { MRRMetric } from "./mrr.ts";
 import { NDCGAt5Metric, NDCGAt10Metric } from "./ndcg.ts";
 import { AvgRetrievalScoreMetric } from "./avg-retrieval-score.ts";
@@ -59,6 +60,7 @@ import { Bleu1Metric } from "./bleu.ts";
 import { RougeLMetric } from "./rouge.ts";
 import { FileRecallAt5Metric, FileRecallAt10Metric } from "./file-recall.ts";
 import { FileMRRMetric } from "./file-mrr.ts";
+import { IoUAt1Metric, IoUAt3Metric, IoUAt5Metric, IoUAt10Metric } from "./iou.ts";
 import type { MetricCalculator } from "../interface.ts";
 
 /**
@@ -78,13 +80,17 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 		// End-to-end retrieval success
 		new SuccessAt5Metric(),
 		new SuccessAt10Metric(),
-		// Context recall
+		// Context recall (strictest to loosest)
+		new RecallAt1Metric(),
+		new RecallAt3Metric(),
 		new RecallAt5Metric(),
 		new RecallAt10Metric(),
 
 		// === Retrieval Metrics (for pure retrieval benchmarks) ===
 		new NDCGAt5Metric(),
 		new NDCGAt10Metric(),
+		new PrecisionAt1Metric(),
+		new PrecisionAt3Metric(),
 		new PrecisionAt5Metric(),
 		new PrecisionAt10Metric(),
 		new MRRMetric(),
@@ -93,6 +99,13 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 		new FileRecallAt5Metric(),
 		new FileRecallAt10Metric(),
 		new FileMRRMetric(),
+		
+		// === Chunking Quality Metrics (for code chunking benchmarks) ===
+		// IoU measures how precisely chunks align with ground truth line ranges
+		new IoUAt1Metric(),
+		new IoUAt3Metric(),
+		new IoUAt5Metric(),
+		new IoUAt10Metric(),
 
 		// === Performance Metrics ===
 		new AvgSearchLatencyMetric(),

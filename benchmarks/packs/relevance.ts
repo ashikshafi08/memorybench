@@ -80,6 +80,29 @@ export function lineRangeIoU(
 }
 
 /**
+ * Options for location relevance checking.
+ */
+export interface LocationRelevanceOptions {
+	/**
+	 * Minimum IoU (Intersection over Union) threshold for relevance.
+	 * 
+	 * - 0.0: Any overlap counts as relevant (current default behavior)
+	 * - 0.3: Weak alignment required (~30% overlap)
+	 * - 0.5: Moderate alignment required (recommended for chunking evaluation)
+	 * - 0.7: Strong alignment required (strict chunking evaluation)
+	 * - 1.0: Exact match required (unrealistic for most chunkers)
+	 * 
+	 * Example with IoU threshold 0.5:
+	 *   Chunk: lines 0-61 (62 lines), Target: lines 0-19 (20 lines)
+	 *   Intersection: 20 lines, Union: 62 lines
+	 *   IoU = 20/62 = 0.32 → NOT relevant (0.32 < 0.5)
+	 * 
+	 * Default: 0.0 (binary overlap, backward compatible)
+	 */
+	iouThreshold?: number;
+}
+
+/**
  * Check if a chunk is relevant to a target location (file + line range).
  *
  * For RepoEval-style benchmarks where ground truth is a specific code location.
@@ -87,12 +110,14 @@ export function lineRangeIoU(
  * @param chunkLocation - Retrieved chunk's location metadata
  * @param targetFile - Ground-truth file path
  * @param targetSpan - Ground-truth line span (optional; if omitted, file match is sufficient)
+ * @param options - Relevance options (e.g., IoU threshold)
  * @returns true if relevant
  */
 export function isLocationRelevant(
 	chunkLocation: ChunkLocation,
 	targetFile: string,
 	targetSpan?: LineSpan,
+	options?: LocationRelevanceOptions,
 ): boolean {
 	// Normalize file paths for comparison
 	const normalizedChunk = normalizePath(chunkLocation.filepath);
@@ -108,12 +133,21 @@ export function isLocationRelevant(
 		return true;
 	}
 
-	// If chunk has line info, check overlap
+	// If chunk has line info, check overlap/IoU
 	if (chunkLocation.startLine !== undefined && chunkLocation.endLine !== undefined) {
-		return lineRangeOverlaps(
-			{ startLine: chunkLocation.startLine, endLine: chunkLocation.endLine },
-			targetSpan,
-		);
+		const chunkSpan = { startLine: chunkLocation.startLine, endLine: chunkLocation.endLine };
+		
+		// Use IoU threshold if specified, otherwise use binary overlap
+		const iouThreshold = options?.iouThreshold ?? 0;
+		
+		if (iouThreshold > 0) {
+			// IoU-based relevance: chunk must have sufficient overlap quality
+			const iou = lineRangeIoU(chunkSpan, targetSpan);
+			return iou >= iouThreshold;
+		} else {
+			// Binary overlap: any overlap counts
+			return lineRangeOverlaps(chunkSpan, targetSpan);
+		}
 	}
 
 	// Chunk doesn't have line info but file matches - count as relevant

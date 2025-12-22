@@ -102,6 +102,42 @@ export function applyFilters<T>(
 }
 
 /**
+ * Clone a GitHub repository to a directory (shallow clone for speed).
+ * Used for downloading benchmark repos that don't have pre-packaged zips.
+ * 
+ * @param githubRepo - Repo in format "owner/name" or "owner_name" (first underscore separates owner/repo)
+ * @param destDir - Directory to clone into
+ */
+export async function cloneGitHubRepo(
+	githubRepo: string,
+	destDir: string,
+): Promise<void> {
+	// Convert owner_name format to owner/name for GitHub URL
+	// Only replace the FIRST underscore to handle repo names with underscores
+	const repoPath = githubRepo.includes("/") 
+		? githubRepo 
+		: githubRepo.replace(/^([^_]+)_(.+)$/, "$1/$2");
+	
+	const repoUrl = `https://github.com/${repoPath}.git`;
+	
+	console.log(`  Cloning ${repoPath}...`);
+	
+	// Use shallow clone for faster download
+	const proc = Bun.spawn(
+		["git", "clone", "--depth", "1", repoUrl, destDir],
+		{ stdout: "pipe", stderr: "pipe" },
+	);
+	
+	const exitCode = await proc.exited;
+	if (exitCode !== 0) {
+		const stderr = await new Response(proc.stderr).text();
+		throw new Error(`Failed to clone ${repoPath}: ${stderr}`);
+	}
+	
+	console.log(`  Cloned to ${destDir}`);
+}
+
+/**
  * Clone a git repository using bare clone + worktree pattern.
  * Returns the worktree directory path.
  */

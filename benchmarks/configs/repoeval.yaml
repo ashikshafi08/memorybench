@@ -54,8 +54,17 @@ search:
   includeChunks: false
 
 # Metrics to compute
-# These use pack-grounded relevance (file + line overlap)
+# These use pack-grounded relevance (file + line overlap with IoU threshold)
+#
+# IoU metrics (NEW): Measure chunking quality - how precisely chunks align with ground truth
+#   - iou_at_5: Average best IoU of chunks in top-5 (0.0-1.0, higher = better alignment)
+#   - iou_at_10: Average best IoU of chunks in top-10
+#
+# Recall metrics: Binary hit@K with IoU threshold (e.g., iouThreshold: 0.5)
+#   - recall_at_5: % queries where a chunk with IoU ≥ threshold is found in top-5
 metrics:
+  - iou_at_5
+  - iou_at_10
   - ndcg_at_5
   - ndcg_at_10
   - precision_at_5
@@ -69,3 +78,36 @@ runtime:
   checkpointing: true
   checkpointGranularity: item
   resumable: true
+
+# Hard negatives configuration
+# Adds files from OTHER repositories as distractors to increase difficulty.
+# This is standard practice in retrieval benchmarks (BEIR, MS MARCO).
+# All chunkers use the same embedding model, so only chunking quality varies.
+#
+# Strategy options (difficulty ranking):
+#   - cross-repo: Files from OTHER repos (EASY - embedding trivially distinguishes)
+#   - same-repo: Files from SAME repo but not answer (MEDIUM - shared vocabulary)
+#   - bm25: Files with high lexical overlap (HARD - requires semantic understanding)
+#   - embedding: Files with high cosine similarity (HARDEST)
+#
+# iouThreshold: IoU (Intersection over Union) for line-range relevance.
+#   0.0: Any line overlap counts (binary, trivially easy → 100% recall)
+#   0.3: ~30% overlap required (lenient)
+#   0.5: ~50% overlap required (recommended - tests chunking precision)
+#   0.7: ~70% overlap required (strict)
+#
+#   Example with ground truth lines 0-19 (20 lines):
+#     Chunk 0-61 (62 lines): IoU = 20/62 = 0.32 → NOT relevant if threshold > 0.32
+#     Chunk 5-25 (21 lines): IoU = 15/21 = 0.71 → Relevant if threshold ≤ 0.71
+hardNegatives:
+  enabled: true
+  strategy: same-repo         # Use same-repo for realistic difficulty
+  count: 500                  # Total number of distractor files to add
+  maxFilesPerRepo: 100        # Max files to take from each other repo
+  excludeTargetFile: false    # Keep target file (needed for same-file retrieval)
+  iouThreshold: 0.3           # Require 30% overlap - more lenient baseline
+  # Try different thresholds:
+  # 0.0 = any overlap (trivially easy, ~100% recall)
+  # 0.3 = lenient (good baseline)
+  # 0.5 = moderate (strict, tests precision)
+  # 0.7 = strict (very precise chunking required)

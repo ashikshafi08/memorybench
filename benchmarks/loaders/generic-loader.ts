@@ -7,6 +7,8 @@
  * Replaces 4 separate loader files with a single factory function.
  */
 
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { BenchmarkConfig, BenchmarkItem } from "../../core/config.ts";
 import { getDataset, getDatasetNames } from "./download/dataset-registry.ts";
 import { applyFilters } from "./download/download-utils.ts";
@@ -40,8 +42,25 @@ export async function loadCodeRetrievalData(
 		);
 	}
 
-	// Ensure data is available
-	if (!dataset.isAvailable()) {
+	// Ensure data is available.
+	// NOTE: RepoEval has multiple task types ("function", "line", "api") with different repo zips.
+	// The eval path must ensure the *requested* task type repos are present; otherwise loadTasks()
+	// will filter everything out and you'll see 0/0 items.
+	if (datasetName === "repoeval") {
+		const tt = options?.taskType ?? "function";
+		const datasetsDir = join(dataset.dataDir, "datasets");
+		const reposDir =
+			tt === "line"
+				? join(dataset.dataDir, "repositories/line")
+				: tt === "api"
+					? join(dataset.dataDir, "repositories/api")
+					: join(dataset.dataDir, "repositories");
+
+		if (!existsSync(datasetsDir) || !existsSync(reposDir)) {
+			console.log(`${datasetName} (${tt}) data not found, downloading...`);
+			await dataset.download({ taskType: tt });
+		}
+	} else if (!dataset.isAvailable()) {
 		console.log(`${datasetName} data not found, downloading...`);
 		await dataset.download();
 	}
@@ -66,7 +85,16 @@ export async function loadCodeRetrievalData(
 	const items: BenchmarkItem[] = [];
 	for (const task of tasks) {
 		try {
-			const item = await dataset.toBenchmarkItem(task);
+			const item = await dataset.toBenchmarkItem(task, {
+				taskType: options?.taskType,
+				hardNegatives: config.hardNegatives,
+				// Pass excludeTargetFile from hardNegatives config
+				// This enables cross-file retrieval mode (finding RELATED code, not SAME code)
+				excludeTargetFile: config.hardNegatives?.excludeTargetFile,
+				// Pass IoU threshold for stricter relevance checking
+				// Higher threshold = chunks must align more precisely with ground truth
+				iouThreshold: config.hardNegatives?.iouThreshold,
+			});
 			// Skip items with no contexts
 			if (item.contexts.length > 0) {
 				items.push(item);

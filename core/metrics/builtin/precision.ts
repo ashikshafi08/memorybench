@@ -191,6 +191,18 @@ export class PrecisionAtKMetric implements MetricCalculator {
 }
 
 // Pre-built instances for common K values
+export class PrecisionAt1Metric extends PrecisionAtKMetric {
+	constructor() {
+		super(1);
+	}
+}
+
+export class PrecisionAt3Metric extends PrecisionAtKMetric {
+	constructor() {
+		super(3);
+	}
+}
+
 export class PrecisionAt5Metric extends PrecisionAtKMetric {
 	constructor() {
 		super(5);

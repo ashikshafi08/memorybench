@@ -254,6 +254,42 @@ const RuntimeConfigSchema = z.object({
 	resumable: z.boolean().default(true),
 });
 
+const HardNegativesConfigSchema = z.object({
+	enabled: z.boolean().default(false),
+	// Strategy options:
+	// - "cross-repo": Random files from other repos (easiest - won't reduce recall much)
+	// - "same-repo": Other files from SAME repo that aren't the answer (harder)
+	// - "bm25": Files with high lexical overlap with query (hardest)
+	// - "embedding": Files with high cosine similarity to query (hardest)
+	strategy: z.enum(["cross-repo", "same-repo", "bm25", "embedding"]).default("same-repo"),
+	count: z.number().default(200),
+	maxFilesPerRepo: z.number().default(50),
+	
+	// Exclude target file from corpus (cross-file retrieval mode)
+	// When true: Tests if model can find RELATED code from OTHER files
+	// When false (default): Tests if model can find the SAME code (trivially easy)
+	// 
+	// Example: If ground truth is in utils.py lines 10-30:
+	//   - excludeTargetFile: false → utils.py IS in corpus → embedding finds it easily (100% recall)
+	//   - excludeTargetFile: true → utils.py is NOT in corpus → model must find related code
+	excludeTargetFile: z.boolean().default(false),
+	
+	// IoU (Intersection over Union) threshold for line-range relevance
+	// This controls how precisely a chunk must align with the ground truth.
+	// 
+	// Values:
+	//   0.0 (default): Any line overlap counts as relevant (binary overlap)
+	//   0.3: ~30% overlap required (lenient)
+	//   0.5: ~50% overlap required (recommended for chunking evaluation)
+	//   0.7: ~70% overlap required (strict)
+	//
+	// Example with target lines 0-19 (20 lines):
+	//   Chunk 0-61 (62 lines): IoU = 20/62 = 0.32 → NOT relevant if threshold > 0.32
+	//   Chunk 0-25 (26 lines): IoU = 20/26 = 0.77 → Relevant if threshold ≤ 0.77
+	//   Chunk 5-19 (15 lines): IoU = 15/20 = 0.75 → Relevant if threshold ≤ 0.75
+	iouThreshold: z.number().min(0).max(1).default(0),
+});
+
 export const BenchmarkConfigSchema = z.object({
 	// Identity
 	name: z.string(),
@@ -283,6 +319,7 @@ export const BenchmarkConfigSchema = z.object({
 	evaluation: EvaluationConfigSchema.optional(),
 	metrics: z.array(z.string()).optional(),
 	runtime: RuntimeConfigSchema.optional(),
+	hardNegatives: HardNegativesConfigSchema.optional(),
 });
 
 export type BenchmarkConfig = z.infer<typeof BenchmarkConfigSchema>;

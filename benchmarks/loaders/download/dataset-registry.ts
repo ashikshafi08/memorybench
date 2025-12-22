@@ -11,6 +11,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BenchmarkItem, PreparedData } from "../../../core/config.ts";
+import { mkdir } from "node:fs/promises";
 import {
 	DATASETS_BASE_DIR,
 	downloadFile,
@@ -18,6 +19,7 @@ import {
 	readJsonl,
 	readJson,
 	cloneRepoWithWorktree,
+	cloneGitHubRepo,
 	findFilesWithExtensions,
 	fetchHuggingFaceDataset,
 	fetchHuggingFaceDatasetViaParquet,
@@ -55,7 +57,40 @@ export interface DatasetDefinition {
 	}) => Promise<RawTask[]>;
 
 	/** Convert task to BenchmarkItem with contexts */
-	toBenchmarkItem: (task: RawTask, options?: { reposDir?: string }) => Promise<BenchmarkItem>;
+	toBenchmarkItem: (task: RawTask, options?: {
+		reposDir?: string;
+		taskType?: string;
+		hardNegatives?: {
+			enabled: boolean;
+			strategy: "cross-repo" | "same-repo" | "bm25" | "embedding";
+			count: number;
+			maxFilesPerRepo: number;
+		};
+		/**
+		 * Exclude the target file from contexts.
+		 * 
+		 * When true, the file containing the ground truth is NOT included in the corpus.
+		 * This tests whether the model can find RELATED code (cross-file retrieval)
+		 * rather than finding the SAME code (trivially easy with embedding similarity).
+		 * 
+		 * Use case: Makes code retrieval benchmarks much harder and more realistic.
+		 * Without this, the query (code prefix) is essentially searching for itself.
+		 */
+		excludeTargetFile?: boolean;
+		
+		/**
+		 * IoU (Intersection over Union) threshold for line-range relevance.
+		 * 
+		 * This controls how precisely a retrieved chunk must align with the ground truth:
+		 *   0.0 (default): Any line overlap counts as relevant (binary overlap)
+		 *   0.3: ~30% overlap required (lenient)
+		 *   0.5: ~50% overlap required (recommended for chunking evaluation)
+		 *   0.7: ~70% overlap required (strict)
+		 * 
+		 * Passed to the pack's relevance checker via item.metadata.iouThreshold
+		 */
+		iouThreshold?: number;
+	}) => Promise<BenchmarkItem>;
 }
 
 export interface RawTask {
@@ -86,14 +121,19 @@ function createRepoEvalDataset(): DatasetDefinition {
 	const dataDir = () => process.env[config.envVar] || join(DATASETS_BASE_DIR, "repoeval");
 	const datasetsDir = () => join(dataDir(), "datasets");
 	// Note: The function_level.zip extracts repos directly to repositories/, not repositories/function_level/
-	const reposDir = () => join(dataDir(), "repositories");
+	// Line and API levels extract to repositories/line/ and repositories/api/ respectively
+	const reposDir = (taskType?: string) => {
+		if (taskType === "line") return join(dataDir(), "repositories/line");
+		if (taskType === "api") return join(dataDir(), "repositories/api");
+		return join(dataDir(), "repositories"); // function (default)
+	};
 
 	return {
 		name: "repoeval",
 		dataDir: dataDir(),
 		envVar: config.envVar,
 
-		isAvailable: () => existsSync(datasetsDir()) && existsSync(reposDir()),
+		isAvailable: () => existsSync(datasetsDir()) && existsSync(reposDir("function")),
 
 		download: async (options) => {
 			const taskType = options?.taskType ?? "function";
@@ -110,7 +150,26 @@ function createRepoEvalDataset(): DatasetDefinition {
 			if (taskConfig) {
 				const reposDest = join(dataDir(), taskConfig.repos.extractTo!);
 				if (!existsSync(reposDest)) {
-					await downloadAndExtractZip(taskConfig.repos.url!, reposDest);
+					// Try ZIP download first
+					try {
+						await downloadAndExtractZip(taskConfig.repos.url!, reposDest);
+					} catch (zipError) {
+						// ZIP doesn't exist - clone repos from GitHub instead
+						console.log(`\nZIP not available, cloning repositories from GitHub...`);
+						await mkdir(reposDest, { recursive: true });
+						
+						const repoList = getRepoListForTaskType("repoeval", taskType);
+						for (const repoName of repoList) {
+							const repoDir = join(reposDest, repoName);
+							if (!existsSync(repoDir)) {
+								try {
+									await cloneGitHubRepo(repoName, repoDir);
+								} catch (cloneError) {
+									console.warn(`  Warning: Failed to clone ${repoName}: ${cloneError}`);
+								}
+							}
+						}
+					}
 				}
 			}
 
@@ -147,8 +206,8 @@ function createRepoEvalDataset(): DatasetDefinition {
 					continue;
 				}
 
-				// Check if repo is downloaded
-				const repoPath = join(reposDir(), repo);
+				// Check if repo is downloaded (use taskType-specific path)
+				const repoPath = join(reposDir(taskType), repo);
 				if (!existsSync(repoPath)) {
 					continue; // Repo not downloaded
 				}
@@ -168,10 +227,16 @@ function createRepoEvalDataset(): DatasetDefinition {
 			return tasks;
 		},
 
-		toBenchmarkItem: async (task) => {
+		toBenchmarkItem: async (task, options?) => {
 			const t = task as RepoEvalRawTask;
-			const repo = t.metadata.task_id.split("/")[0]!;
-			const repoDir = join(reposDir(), repo);
+			// Extract repo name: normalize "--" to "_" to match directory names
+			// (task_id is normalized in loadTasks, but handle both cases for safety)
+			const repo = t.metadata.task_id.replace("--", "_").split("/")[0]!;
+			const taskType = options?.taskType || "function";
+			const repoDir = join(reposDir(taskType), repo);
+
+			// Extract target file path early (needed for exclusion check)
+			const targetFile = t.metadata.fpath_tuple.slice(1).join("/");
 
 			// Load all Python files from the repo
 			const pyFiles = findFilesWithExtensions(repoDir, new Set([".py"]));
@@ -181,6 +246,14 @@ function createRepoEvalDataset(): DatasetDefinition {
 				try {
 					const content = await readFile(filepath, "utf-8");
 					const relPath = filepath.replace(`${repoDir}/`, "");
+					
+					// Skip target file if excludeTargetFile is enabled
+					// This makes the benchmark test cross-file retrieval (finding RELATED code)
+					// rather than same-file retrieval (trivially finding the query's own file)
+					if (options?.excludeTargetFile && relPath === targetFile) {
+						continue;
+					}
+					
 					contexts.push({
 						id: `${repo}:${relPath}`,
 						content,
@@ -189,7 +262,20 @@ function createRepoEvalDataset(): DatasetDefinition {
 				} catch { /* skip */ }
 			}
 
-			const targetFile = t.metadata.fpath_tuple.slice(1).join("/");
+			// Add hard negatives if configured
+			if (options?.hardNegatives?.enabled) {
+				const { generateHardNegatives } = await import("../hard-negatives.ts");
+				const hardNegs = await generateHardNegatives({
+					currentRepo: repo,
+					reposDir: reposDir(taskType),
+					config: options.hardNegatives,
+					taskType: taskType,
+					query: t.prompt,  // Pass query for BM25/embedding strategies
+					targetFile,       // Exclude target file from negatives
+					existingContexts: contexts,
+				});
+				contexts.push(...hardNegs);
+			}
 			return {
 				id: t.metadata.task_id,
 				question: t.prompt,
@@ -205,6 +291,8 @@ function createRepoEvalDataset(): DatasetDefinition {
 					targetFile,
 					startLine: t.metadata.context_start_lineno,
 					endLine: t.metadata.line_no,
+					// IoU threshold for relevance checking (passed to pack via metadata)
+					iouThreshold: options?.iouThreshold,
 				},
 			};
 		},

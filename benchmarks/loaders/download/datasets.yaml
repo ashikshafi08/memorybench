@@ -22,34 +22,34 @@ datasets:
           type: zip
           url: https://github.com/Veronicium/repoeval_debug/raw/main/function_level.zip
           extractTo: repositories
-        # Curated repos for function-level (original 6 from paper)
+        # Curated repos for function-level (original 6 from paper + 2 additional repos in dataset)
         repoList:
+          - CarperAI_trlx
           - amazon-science_patchcore-inspection
           - deepmind_tracr
           - facebookresearch_omnivore
           - google_lightweight_mmm
+          - leopard-ai_betty
           - lucidrains_imagen-pytorch
           - maxhumber_redframes
 
       line:
         description: "Line-level code completion"
         repos:
-          # Line-level uses different repos (need separate download)
+          # Line-level repos need to be cloned from GitHub (no pre-packaged zip)
           type: zip
           url: https://github.com/Veronicium/repoeval_debug/raw/main/line_level.zip
           extractTo: repositories/line
-        # Repos used in line-level tasks
+        # Actual repos used in line-level tasks (from JSONL file):
         repoList:
           - huggingface_diffusers
           - pytorch_rl
           - nerfstudio-project_nerfstudio
-          - CarperAI_trlx
-          - pytorch_data
-          - lucidrains_DALLE2-pytorch
-          - mosaicml_composer
-          - allenai_allennlp
-          - openai_gym
-          - openai_baselines
+          - alibaba_FederatedScope
+          - awslabs_fortuna
+          - google_vizier
+          - huggingface_evaluate
+          - opendilab_ACE
 
       api:
         description: "API-level code completion"

@@ -135,6 +135,18 @@ export class RecallAtKMetric implements MetricCalculator {
 }
 
 // Pre-built instances for common K values
+export class RecallAt1Metric extends RecallAtKMetric {
+	constructor() {
+		super(1);
+	}
+}
+
+export class RecallAt3Metric extends RecallAtKMetric {
+	constructor() {
+		super(3);
+	}
+}
+
 export class RecallAt5Metric extends RecallAtKMetric {
 	constructor() {
 		super(5);
