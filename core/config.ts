@@ -1,5 +1,5 @@
 /**
- * Core configuration schemas for memorybench.
+ * Core configuration schemas for superbench.
  * Defines Zod schemas for provider and benchmark YAML configs.
  */
 

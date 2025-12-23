@@ -1,12 +1,12 @@
-# Memorybench
+# Superbench
 
-A unified benchmarking platform for evaluating memory providers, RAG systems, and context management solutions. Inspired by MTEB and SWE-bench, Memorybench enables fair, reproducible comparisons across different memory architectures.
+A unified benchmarking platform for evaluating memory providers, RAG systems, and context management solutions. Inspired by MTEB and SWE-bench, Superbench enables fair, reproducible comparisons across different memory architectures.
 
 ## Overview
 
-Memorybench is designed to answer the question: **"How well does this system use context to provide correct answers?"**
+Superbench is designed to answer the question: **"How well does this system use context to provide correct answers?"**
 
-Unlike traditional retrieval benchmarks that measure recall/precision, Memorybench focuses on **end-to-end correctness** and **memory-enabled success** - metrics that matter for production memory systems.
+Unlike traditional retrieval benchmarks that measure recall/precision, Superbench focuses on **end-to-end correctness** and **memory-enabled success** - metrics that matter for production memory systems.
 
 ### Key Features
 
@@ -49,7 +49,7 @@ cp .env.example .env
 Run the RAG template benchmark against AQRAG:
 
 ```bash
-memorybench eval --benchmarks rag-template --providers aqrag --metrics accuracy f1 success_at_5 --limit 10
+superbench eval --benchmarks rag-template --providers aqrag --metrics accuracy f1 success_at_5 --limit 10
 ```
 
 This will:
@@ -66,13 +66,13 @@ This will:
 
 ```bash
 # List recent runs
-memorybench results
+superbench results
 
 # View specific run
-memorybench results <runId>
+superbench results <runId>
 
 # Export to JSON
-memorybench export <runId> --format json -o results.json
+superbench export <runId> --format json -o results.json
 ```
 
 ## Available Providers
@@ -134,45 +134,45 @@ See [METRICS_AND_ORCHESTRATION.md](./METRICS_AND_ORCHESTRATION.md) for detailed 
 ### List Providers and Benchmarks
 
 ```bash
-memorybench list
+superbench list
 ```
 
 ### Run Evaluation
 
 ```bash
 # Single provider, single benchmark
-memorybench eval --benchmarks rag-template --providers aqrag --limit 10
+superbench eval --benchmarks rag-template --providers aqrag --limit 10
 
 # Multiple providers (comparison)
-memorybench eval --benchmarks rag-template --providers aqrag contextual-retrieval openrouter-rag
+superbench eval --benchmarks rag-template --providers aqrag contextual-retrieval openrouter-rag
 
 # Custom metrics
-memorybench eval --benchmarks rag-template --providers aqrag --metrics accuracy f1 success_at_5 bleu_1
+superbench eval --benchmarks rag-template --providers aqrag --metrics accuracy f1 success_at_5 bleu_1
 
 # With filtering
-memorybench eval --benchmarks rag-template --providers aqrag --limit 5 --start 0
+superbench eval --benchmarks rag-template --providers aqrag --limit 5 --start 0
 ```
 
 ### View and Export Results
 
 ```bash
 # List recent runs
-memorybench results
+superbench results
 
 # View specific run with metrics
-memorybench results <runId> --metrics accuracy f1
+superbench results <runId> --metrics accuracy f1
 
 # Export to JSON
-memorybench export <runId> --format json -o results.json
+superbench export <runId> --format json -o results.json
 
 # Export to CSV
-memorybench export <runId> --format csv -o results.csv
+superbench export <runId> --format csv -o results.csv
 ```
 
 ## Architecture
 
 ```
-memorybench/
+superbench/
 ├── core/               # Core evaluation engine
 │   ├── metrics/       # Pluggable metric registry
 │   ├── runner.ts      # Benchmark runner with checkpointing

@@ -1,6 +1,6 @@
-# Memorybench Developer Guide
+# Superbench Developer Guide
 
-**Complete guide to extending Memorybench with custom benchmarks, datasets, providers, and metrics.**
+**Complete guide to extending Superbench with custom benchmarks, datasets, providers, and metrics.**
 
 This guide is for developers who want to:
 - Add new code chunking strategies
@@ -33,7 +33,7 @@ This guide is for developers who want to:
 
 ```
 ┌─────────────┐
-│  CLI Entry  │  memorybench eval --benchmarks repoeval --providers my-chunker
+│  CLI Entry  │  superbench eval --benchmarks repoeval --providers my-chunker
 └──────┬──────┘
        │
        ▼
@@ -145,7 +145,7 @@ for (const chunkerName of getChunkerNames()) {
 **3. Test it:**
 
 ```bash
-memorybench eval \
+superbench eval \
   --benchmarks repoeval \
   --providers my-chunker \
   --limit 5
@@ -223,7 +223,7 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 **3. Test it:**
 
 ```bash
-memorybench eval \
+superbench eval \
   --benchmarks repoeval \
   --providers code-chunk-ast \
   --metrics my-metric,accuracy \
@@ -407,10 +407,10 @@ metrics:
 
 ```bash
 # Download/prepare data
-memorybench download --benchmark my-benchmark
+superbench download --benchmark my-benchmark
 
 # Run evaluation
-memorybench eval \
+superbench eval \
   --benchmarks my-benchmark \
   --providers code-chunk-ast \
   --limit 10
@@ -546,13 +546,13 @@ registerLoader({
 
 ```bash
 # Download
-memorybench download --dataset my-dataset
+superbench download --dataset my-dataset
 
 # Verify
 ls benchmarks/data/my-dataset
 
 # Test
-memorybench eval --benchmarks my-dataset --providers code-chunk-ast --limit 5
+superbench eval --benchmarks my-dataset --providers code-chunk-ast --limit 5
 ```
 
 ### Dataset Structure (Recommended)
@@ -690,7 +690,7 @@ local:
 ```bash
 export MY_RAG_API_KEY=sk-...
 
-memorybench eval \
+superbench eval \
   --benchmarks repoeval \
   --providers my-rag \
   --limit 5
@@ -924,7 +924,7 @@ EOF
 **2. Run evaluation:**
 
 ```bash
-memorybench eval \
+superbench eval \
   --benchmarks test-benchmark \
   --providers my-rag \
   --limit 1 \
@@ -934,7 +934,7 @@ memorybench eval \
 **3. Check results:**
 
 ```bash
-memorybench table --run latest --benchmark test-benchmark
+superbench table --run latest --benchmark test-benchmark
 ```
 
 ---
@@ -1229,13 +1229,13 @@ preflight: async () => {
 Enable verbose logging:
 
 ```bash
-DEBUG=* memorybench eval --benchmarks repoeval --providers my-chunker --limit 1
+DEBUG=* superbench eval --benchmarks repoeval --providers my-chunker --limit 1
 ```
 
 Check individual item results:
 
 ```bash
-memorybench table --run latest --benchmark repoeval --verbose
+superbench table --run latest --benchmark repoeval --verbose
 ```
 
 ### Performance Issues

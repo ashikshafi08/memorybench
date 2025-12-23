@@ -1,10 +1,10 @@
 {
-  "name": "memorybench",
+  "name": "superbench",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "bin": {
-    "memorybench": "./cli/index.ts"
+    "superbench": "./cli/index.ts"
   },
   "scripts": {
     "cli": "bun run ./cli/index.ts",

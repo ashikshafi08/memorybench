@@ -1,5 +1,5 @@
 /**
- * Core provider types and interfaces for memorybench.
+ * Core provider types and interfaces for superbench.
  */
 
 import type { ProviderConfig, PreparedData, SearchResult } from "../../core/config.ts";

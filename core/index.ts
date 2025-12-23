@@ -1,5 +1,5 @@
 /**
- * Core module exports for memorybench.
+ * Core module exports for superbench.
  */
 
 export * from "./config.ts";

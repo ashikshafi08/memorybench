@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LlamaIndex CodeSplitter Python Bridge for memorybench-bench-code-chunk.
+LlamaIndex CodeSplitter Python Bridge for superbench-bench-code-chunk.
 
 This script provides a subprocess interface to LlamaIndex's CodeSplitter.
 Uses tree-sitter parsing for semantic code chunking.

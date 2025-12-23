@@ -21,16 +21,16 @@ bun link
 bun run ./cli/index.ts
 
 # Run evaluation
-memorybench eval --benchmarks repoeval --providers code-chunk-ast --limit 10
+superbench eval --benchmarks repoeval --providers code-chunk-ast --limit 10
 
 # List available providers/benchmarks
-memorybench list
+superbench list
 
 # Download benchmark datasets
-memorybench download --benchmark repoeval
+superbench download --benchmark repoeval
 
 # View results
-memorybench table --run <runId> --benchmark repoeval
+superbench table --run <runId> --benchmark repoeval
 
 # Run tests
 bun test                        # All tests

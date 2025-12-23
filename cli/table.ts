@@ -1,7 +1,7 @@
 /**
  * Table Generator: Reads results from ResultsStore and formats as benchmark table.
  *
- * Usage: memorybench table --run <runId> --benchmark <name> [--baseline code-chunk-fixed]
+ * Usage: superbench table --run <runId> --benchmark <name> [--baseline code-chunk-fixed]
  *
  * Produces an ASCII table with:
  * - Metrics: nDCG@10, P@10, R@10 (span-level) or File-R@5, File-R@10, File-MRR (file-level)

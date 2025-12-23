@@ -5,7 +5,7 @@
  * and reports them side-by-side.
  *
  * Usage:
- *   memorybench eval:policy --benchmarks repoeval --providers code-chunk-ast,code-chunk-fixed
+ *   superbench eval:policy --benchmarks repoeval --providers code-chunk-ast,code-chunk-fixed
  *
  * Output format:
  * ┌─────────────────────────────────────────────────────────────────────────────────────┐

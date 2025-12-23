@@ -7,7 +7,7 @@
  * 1. **Explicit qrels** (recommended for code-chunk):
  *    Uses `result.metadata.relevantIds` or `relevantChunkIds` for ground-truth.
  *
- * 2. **Pack-owned relevance** (existing memorybench pattern):
+ * 2. **Pack-owned relevance** (existing superbench pattern):
  *    Uses pack's `isRelevant()` when `pack.sealedSemantics.relevance === true`.
  *
  * 3. **Token-based fallback**:

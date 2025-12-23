@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LangChain RecursiveCharacterTextSplitter Python Bridge for memorybench-bench-code-chunk.
+LangChain RecursiveCharacterTextSplitter Python Bridge for superbench-bench-code-chunk.
 
 This script provides a subprocess interface to LangChain's language-aware text splitter.
 Uses the `from_language()` factory method for language-specific separators.

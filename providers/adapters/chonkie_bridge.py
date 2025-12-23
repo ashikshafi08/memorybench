@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Chonkie Python Bridge for memorybench-bench-code-chunk.
+Chonkie Python Bridge for superbench-bench-code-chunk.
 
 This script provides a subprocess interface to Chonkie chunkers.
 Supports both CodeChunker (semantic) and RecursiveChunker (character fallback).

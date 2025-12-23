@@ -1,5 +1,5 @@
 /**
- * Provider exports for memorybench.
+ * Provider exports for superbench.
  *
  * All providers use the adapter-based system:
  * - YAML config in providers/configs/

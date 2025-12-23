@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Memorybench CLI entry point.
+ * Superbench CLI entry point.
  * Provides commands for listing, describing, and running benchmarks.
  */
 
@@ -189,12 +189,12 @@ function parseArgs(argv: string[]): ParsedArgs {
 function printHelp(): void {
 	console.log(`
 ╭─────────────────────────────────────────────────────────────────╮
-│                         MEMORYBENCH                              │
+│                         SUPERBENCH                              │
 │         Config-driven benchmarking for memory providers          │
 ╰─────────────────────────────────────────────────────────────────╯
 
 Usage:
-  memorybench <command> [options]
+  superbench <command> [options]
 
 Commands:
   list              List available providers and benchmarks
@@ -208,18 +208,18 @@ Commands:
   help              Show this help message
 
 Examples:
-  memorybench list --providers
-  memorybench list --benchmarks --tags temporal
-  memorybench describe longmemeval
-  memorybench eval --benchmarks longmemeval --providers supermemory --limit 10
-  memorybench eval --benchmarks rag-template --providers supermemory --metrics accuracy f1 recall_at_5
-  memorybench eval --benchmarks repoeval --providers code-chunk-ast --task-type function  (default)
-  memorybench eval --benchmarks repoeval --providers code-chunk-ast --task-type line
-  memorybench eval --benchmarks repoeval --providers code-chunk-ast --task-type api
-  memorybench eval --benchmarks repoeval --providers code-chunk-ast --policy all  (runs both 1-hop and H-hop)
-  memorybench table --run <runId> --benchmark repoeval
-  memorybench results run-20251216-123456-abc1
-  memorybench export run-20251216-123456-abc1 --format csv --output results.csv
+  superbench list --providers
+  superbench list --benchmarks --tags temporal
+  superbench describe longmemeval
+  superbench eval --benchmarks longmemeval --providers supermemory --limit 10
+  superbench eval --benchmarks rag-template --providers supermemory --metrics accuracy f1 recall_at_5
+  superbench eval --benchmarks repoeval --providers code-chunk-ast --task-type function  (default)
+  superbench eval --benchmarks repoeval --providers code-chunk-ast --task-type line
+  superbench eval --benchmarks repoeval --providers code-chunk-ast --task-type api
+  superbench eval --benchmarks repoeval --providers code-chunk-ast --policy all  (runs both 1-hop and H-hop)
+  superbench table --run <runId> --benchmark repoeval
+  superbench results run-20251216-123456-abc1
+  superbench export run-20251216-123456-abc1 --format csv --output results.csv
 
 Metrics (use with --metrics):
 
@@ -243,7 +243,7 @@ Metrics (use with --metrics):
     avg_total_latency_ms  Average end-to-end latency
     p95_latency_ms        95th percentile latency
 
-Run 'memorybench <command> --help' for more information on a command.
+Run 'superbench <command> --help' for more information on a command.
 `);
 }
 
@@ -397,9 +397,9 @@ async function downloadCommand(
 ╰─────────────────────────────────────────────────────────────────╯
 
 Usage:
-  memorybench download --benchmark <name>    Download a specific dataset
-  memorybench download --benchmarks <names>  Download multiple datasets
-  memorybench download --all                 Download all datasets
+  superbench download --benchmark <name>    Download a specific dataset
+  superbench download --benchmarks <names>  Download multiple datasets
+  superbench download --all                 Download all datasets
 
 Options:
   --task-type <type>   Task type for RepoEval: function (default), line, api, all
@@ -408,11 +408,11 @@ Available datasets:
 ${getDatasetNames().map((n: string) => `  - ${n}`).join("\n")}
 
 Examples:
-  memorybench download --benchmark repoeval
-  memorybench download --benchmark repoeval --task-type line
-  memorybench download --benchmark repoeval --task-type all
-  memorybench download --benchmarks repoeval repobench-r
-  memorybench download --all
+  superbench download --benchmark repoeval
+  superbench download --benchmark repoeval --task-type line
+  superbench download --benchmark repoeval --task-type all
+  superbench download --benchmarks repoeval repobench-r
+  superbench download --all
 `);
 		return;
 	}
@@ -555,7 +555,7 @@ async function evalCommand(
 	// Print header
 	console.log(`
 ╭─────────────────────────────────────────────────────────────────╮
-│                    MEMORYBENCH EVALUATION                        │
+│                    SUPERBENCH EVALUATION                        │
 ├─────────────────────────────────────────────────────────────────┤
 │ Benchmarks: ${benchmarks.join(", ").padEnd(49)} │
 │ Providers:  ${providers.join(", ").padEnd(49)} │
@@ -597,7 +597,7 @@ async function evalCommand(
 
 			console.log(`\n✅ Run ID: ${result.runId}`);
 			console.log(`   Results saved to: ${outputDir}/results.db`);
-			console.log(`   View results: memorybench results ${result.runId}\n`);
+			console.log(`   View results: superbench results ${result.runId}\n`);
 		}
 	} catch (error) {
 		console.error("\n❌ Evaluation failed:", error);
