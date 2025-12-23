@@ -21,11 +21,6 @@ const SEMANTIC_FIELDS = {
 		"evaluation.method",
 		"evaluation.customEvaluator",
 	],
-	relevance: [
-		// Relevance is typically computed by the pack's isRelevant method,
-		// but we don't have explicit YAML fields for this yet.
-		// This is a placeholder for future enforcement.
-	],
 } as const;
 
 /**

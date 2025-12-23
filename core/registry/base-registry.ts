@@ -77,14 +77,6 @@ export class BaseRegistry<T> {
 		this.throwOnConflict = options.throwOnConflict ?? true;
 	}
 
-	/**
-	 * Register an item with a key and optional aliases.
-	 *
-	 * @param key - Primary key for the item
-	 * @param item - Item to register
-	 * @param aliases - Optional aliases that also resolve to this item
-	 * @throws RegistryConflictError if key or alias conflicts (when throwOnConflict=true)
-	 */
 	protected registerItem(key: string, item: T, aliases?: readonly string[]): void {
 		// Check for key conflicts
 		if (this.items.has(key) || this.aliasMap.has(key)) {
@@ -113,10 +105,6 @@ export class BaseRegistry<T> {
 		}
 	}
 
-	/**
-	 * Get an item by key or alias.
-	 * Returns undefined if not found.
-	 */
 	get(keyOrAlias: string): T | undefined {
 		// Direct lookup
 		if (this.items.has(keyOrAlias)) {
@@ -132,10 +120,6 @@ export class BaseRegistry<T> {
 		return undefined;
 	}
 
-	/**
-	 * Get an item by key or alias.
-	 * Throws RegistryNotFoundError if not found.
-	 */
 	getOrThrow(keyOrAlias: string): T {
 		const item = this.get(keyOrAlias);
 		if (item === undefined) {
@@ -148,45 +132,26 @@ export class BaseRegistry<T> {
 		return item;
 	}
 
-	/**
-	 * Check if an item exists by key or alias.
-	 */
 	has(keyOrAlias: string): boolean {
 		return this.items.has(keyOrAlias) || this.aliasMap.has(keyOrAlias);
 	}
 
-	/**
-	 * Get all registered items.
-	 */
 	list(): T[] {
 		return Array.from(this.items.values());
 	}
 
-	/**
-	 * Get all primary keys (sorted alphabetically).
-	 */
 	keys(): string[] {
 		return Array.from(this.items.keys()).sort();
 	}
 
-	/**
-	 * Get all aliases (sorted alphabetically).
-	 */
 	aliases(): string[] {
 		return Array.from(this.aliasMap.keys()).sort();
 	}
 
-	/**
-	 * Get number of registered items (not counting aliases).
-	 */
 	get size(): number {
 		return this.items.size;
 	}
 
-	/**
-	 * Remove an item by primary key.
-	 * Also removes all associated aliases.
-	 */
 	delete(key: string): boolean {
 		if (!this.items.has(key)) {
 			return false;
@@ -204,18 +169,11 @@ export class BaseRegistry<T> {
 		return true;
 	}
 
-	/**
-	 * Clear all items and aliases.
-	 */
 	clear(): void {
 		this.items.clear();
 		this.aliasMap.clear();
 	}
 
-	/**
-	 * Resolve an alias to its primary key.
-	 * Returns the input if it's already a primary key or not found.
-	 */
 	resolveAlias(keyOrAlias: string): string {
 		return this.aliasMap.get(keyOrAlias) ?? keyOrAlias;
 	}

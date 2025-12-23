@@ -12,17 +12,13 @@
  *   - CrossCodeEval  → crossFileCoverage (dependency file coverage)
  */
 
-/**
- * Line range span (1-indexed, inclusive).
- */
+import { tokenize } from "../../core/metrics/builtin/utils.ts";
+
 export interface LineSpan {
 	startLine: number;
 	endLine: number;
 }
 
-/**
- * Chunk metadata with file and line information.
- */
 export interface ChunkLocation {
 	filepath: string;
 	startLine?: number;
@@ -33,16 +29,6 @@ export interface ChunkLocation {
 // Line Range Overlap (RepoEval)
 // ============================================================================
 
-/**
- * Check if two line ranges overlap.
- *
- * Used by RepoEval to determine if a retrieved chunk contains the ground-truth
- * code location.
- *
- * @param chunk - Retrieved chunk's line span (must have startLine and endLine)
- * @param target - Ground-truth line span
- * @returns true if the ranges overlap (any shared line)
- */
 export function lineRangeOverlaps(
 	chunk: LineSpan,
 	target: LineSpan,
@@ -79,40 +65,10 @@ export function lineRangeIoU(
 	return union > 0 ? intersection / union : 0;
 }
 
-/**
- * Options for location relevance checking.
- */
 export interface LocationRelevanceOptions {
-	/**
-	 * Minimum IoU (Intersection over Union) threshold for relevance.
-	 * 
-	 * - 0.0: Any overlap counts as relevant (current default behavior)
-	 * - 0.3: Weak alignment required (~30% overlap)
-	 * - 0.5: Moderate alignment required (recommended for chunking evaluation)
-	 * - 0.7: Strong alignment required (strict chunking evaluation)
-	 * - 1.0: Exact match required (unrealistic for most chunkers)
-	 * 
-	 * Example with IoU threshold 0.5:
-	 *   Chunk: lines 0-61 (62 lines), Target: lines 0-19 (20 lines)
-	 *   Intersection: 20 lines, Union: 62 lines
-	 *   IoU = 20/62 = 0.32 → NOT relevant (0.32 < 0.5)
-	 * 
-	 * Default: 0.0 (binary overlap, backward compatible)
-	 */
 	iouThreshold?: number;
 }
 
-/**
- * Check if a chunk is relevant to a target location (file + line range).
- *
- * For RepoEval-style benchmarks where ground truth is a specific code location.
- *
- * @param chunkLocation - Retrieved chunk's location metadata
- * @param targetFile - Ground-truth file path
- * @param targetSpan - Ground-truth line span (optional; if omitted, file match is sufficient)
- * @param options - Relevance options (e.g., IoU threshold)
- * @returns true if relevant
- */
 export function isLocationRelevant(
 	chunkLocation: ChunkLocation,
 	targetFile: string,
@@ -193,17 +149,6 @@ export function jaccardSimilarity(a: string, b: string): number {
 	return union > 0 ? intersection / union : 0;
 }
 
-/**
- * Check if a chunk matches a gold snippet via Jaccard similarity.
- *
- * Used by RepoBench-R for content-based matching when chunk boundaries
- * differ from the original dataset's pre-chunked snippets.
- *
- * @param chunkContent - Retrieved chunk's content
- * @param goldContent - Gold snippet's content
- * @param threshold - Minimum Jaccard similarity to count as match (default: 0.7)
- * @returns true if Jaccard similarity ≥ threshold
- */
 export function isJaccardMatch(
 	chunkContent: string,
 	goldContent: string,
@@ -216,16 +161,6 @@ export function isJaccardMatch(
 // File Match (SWE-bench Lite)
 // ============================================================================
 
-/**
- * Check if a chunk's file is in the list of modified files.
- *
- * Used by SWE-bench Lite where ground truth is the set of files modified
- * by a patch.
- *
- * @param chunkFile - Retrieved chunk's file path
- * @param modifiedFiles - List of file paths modified by the patch
- * @returns true if the chunk's file is in the modified list
- */
 export function fileMatches(
 	chunkFile: string,
 	modifiedFiles: string[],
@@ -236,14 +171,6 @@ export function fileMatches(
 	);
 }
 
-/**
- * Check if a chunk is relevant to a SWE-bench task.
- *
- * @param chunkLocation - Retrieved chunk's location metadata
- * @param modifiedFiles - Files modified by the patch
- * @param modifiedLineRanges - Optional: line ranges modified per file
- * @returns true if relevant
- */
 export function isSWEBenchRelevant(
 	chunkLocation: ChunkLocation,
 	modifiedFiles: string[],
@@ -277,15 +204,6 @@ export function isSWEBenchRelevant(
 // Cross-File Coverage (CrossCodeEval)
 // ============================================================================
 
-/**
- * Compute coverage of ground-truth files by retrieved chunks.
- *
- * Used by CrossCodeEval to measure how many dependency files are retrieved.
- *
- * @param retrievedFiles - Set of file paths from retrieved chunks
- * @param groundTruthFiles - Set of ground-truth dependency file paths
- * @returns Coverage ratio between 0 and 1
- */
 export function crossFileCoverage(
 	retrievedFiles: string[],
 	groundTruthFiles: string[],
@@ -311,13 +229,6 @@ export function crossFileCoverage(
 	return covered / groundTruthFiles.length;
 }
 
-/**
- * Check if a chunk is relevant for CrossCodeEval.
- *
- * @param chunkFile - Retrieved chunk's file path
- * @param dependencyFiles - Ground-truth dependency file paths
- * @returns true if the chunk's file is a required dependency
- */
 export function isCrossCodeRelevant(
 	chunkFile: string,
 	dependencyFiles: string[],
@@ -369,16 +280,4 @@ export function pathMatches(path1: string, path2: string): boolean {
 	}
 
 	return false;
-}
-
-/**
- * Tokenize text for Jaccard similarity.
- * Simple whitespace tokenization with normalization.
- */
-function tokenize(text: string): string[] {
-	return text
-		.toLowerCase()
-		.split(/\s+/)
-		.map((t) => t.replace(/[^\w]/g, ""))
-		.filter((t) => t.length > 0);
 }
