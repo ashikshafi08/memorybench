@@ -134,13 +134,8 @@ async function createLocalProvider(config: ProviderConfig): Promise<Provider> {
 			);
 		}
 
-		// Create instance
-		const provider: Provider =
-			typeof AdapterClass === "function"
-				? AdapterClass.prototype
-					? new AdapterClass(config)
-					: await AdapterClass(config)
-				: AdapterClass;
+		// Create instance (all providers are class constructors)
+		const provider: Provider = new AdapterClass(config);
 
 		if (provider.initialize) {
 			await provider.initialize();

@@ -8,6 +8,7 @@ import type { CheckpointManager } from "./checkpoint.ts";
 import type { BenchmarkConfig, BenchmarkItem, PreparedData, SearchResult, EvalResult } from "./config.ts";
 import type { Provider } from "../providers/base/types.ts";
 import { createProvider } from "../providers/factory.ts";
+import { GenericChunkerProvider } from "../providers/adapters/generic-chunker.ts";
 import { loadBenchmarkData, prepareBenchmarkContexts } from "../benchmarks/loaders/index.ts";
 import { getDefaultRegistry, UnknownMetricError } from "./metrics/index.ts";
 import type { MetricResult } from "./metrics/interface.ts";
@@ -207,7 +208,7 @@ export class BenchmarkRunner {
 			);
 
 			// Ingestion phase
-			await this.ingestPhase(
+			const contextsCount = await this.ingestPhase(
 				provider,
 				items,
 				benchmarkConfig,
@@ -215,6 +216,17 @@ export class BenchmarkRunner {
 				runTag,
 				providerName,
 			);
+
+			// Report chunking failures if using GenericChunkerProvider
+			if (provider instanceof GenericChunkerProvider) {
+				const summary = provider.getFailureSummary(runTag);
+				if (summary) {
+					console.warn(`\n⚠️  ${summary}`);
+				}
+
+				// Check failure rate threshold (fail fast if >10%)
+				provider.checkFailureRate(runTag, contextsCount);
+			}
 
 			// Search & Evaluate phase
 			const evalResults = await this.evaluatePhase(
@@ -277,6 +289,7 @@ export class BenchmarkRunner {
 
 	/**
 	 * Ingestion phase - add contexts to provider.
+	 * @returns The number of contexts processed (for failure rate checking)
 	 */
 	private async ingestPhase(
 		provider: Provider,
@@ -285,13 +298,15 @@ export class BenchmarkRunner {
 		runId: string,
 		runTag: string,
 		providerName: string,
-	): Promise<void> {
+	): Promise<number> {
 		const benchmarkName = benchmarkConfig.name;
 
 		// Prepare contexts for ingestion
 		const contexts = prepareBenchmarkContexts(items, benchmarkConfig);
 
 		let completed = 0;
+		let skipped = 0;
+
 		for (const context of contexts) {
 			// Check if already ingested
 			const shouldSkip = await this.checkpointManager.shouldSkip(
@@ -340,17 +355,41 @@ export class BenchmarkRunner {
 					phase: "ingest",
 				});
 			} catch (error) {
-				await this.checkpointManager.markFailed(
-					runId,
-					benchmarkName,
-					providerName,
-					context.id,
-					"ingest",
-					String(error),
-				);
+				// Check if error is due to empty content
+				const errorMsg = String(error);
+				if (errorMsg.includes("No chunks produced")) {
+					// This is an empty file that slipped through - mark as skipped
+					await this.checkpointManager.markSkipped(
+						runId,
+						benchmarkName,
+						providerName,
+						context.id,
+						"ingest",
+						"Empty file (no chunks produced)",
+					);
+					skipped++;
+					completed++;  // Still count toward progress
+				} else {
+					// Actual chunking failure
+					await this.checkpointManager.markFailed(
+						runId,
+						benchmarkName,
+						providerName,
+						context.id,
+						"ingest",
+						String(error),
+					);
+				}
 				console.error(`Failed to ingest context ${context.id}:`, error);
 			}
 		}
+
+		// Log summary
+		if (skipped > 0) {
+			console.log(`\nIngestion: ${completed - skipped} chunked, ${skipped} skipped (empty files)`);
+		}
+
+		return contexts.length;
 	}
 
 	/**

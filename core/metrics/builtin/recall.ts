@@ -135,26 +135,7 @@ export class RecallAtKMetric implements MetricCalculator {
 }
 
 // Pre-built instances for common K values
-export class RecallAt1Metric extends RecallAtKMetric {
-	constructor() {
-		super(1);
-	}
-}
-
-export class RecallAt3Metric extends RecallAtKMetric {
-	constructor() {
-		super(3);
-	}
-}
-
-export class RecallAt5Metric extends RecallAtKMetric {
-	constructor() {
-		super(5);
-	}
-}
-
-export class RecallAt10Metric extends RecallAtKMetric {
-	constructor() {
-		super(10);
-	}
-}
+export const RecallAt1Metric = new RecallAtKMetric(1);
+export const RecallAt3Metric = new RecallAtKMetric(3);
+export const RecallAt5Metric = new RecallAtKMetric(5);
+export const RecallAt10Metric = new RecallAtKMetric(10);

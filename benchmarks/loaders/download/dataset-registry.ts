@@ -245,15 +245,21 @@ function createRepoEvalDataset(): DatasetDefinition {
 			for (const filepath of pyFiles) {
 				try {
 					const content = await readFile(filepath, "utf-8");
+
+					// Skip empty files (0 bytes or whitespace-only)
+					if (!content || content.trim().length === 0) {
+						continue;
+					}
+
 					const relPath = filepath.replace(`${repoDir}/`, "");
-					
+
 					// Skip target file if excludeTargetFile is enabled
 					// This makes the benchmark test cross-file retrieval (finding RELATED code)
 					// rather than same-file retrieval (trivially finding the query's own file)
 					if (options?.excludeTargetFile && relPath === targetFile) {
 						continue;
 					}
-					
+
 					contexts.push({
 						id: `${repo}:${relPath}`,
 						content,
@@ -741,6 +747,12 @@ function createSWEBenchLiteDataset(): DatasetDefinition {
 			for (const filepath of sourceFiles) {
 				try {
 					const content = await readFile(filepath, "utf-8");
+
+					// Skip empty files (0 bytes or whitespace-only)
+					if (!content || content.trim().length === 0) {
+						continue;
+					}
+
 					const relPath = filepath.replace(`${repoDir}/`, "");
 					contexts.push({
 						id: `${t.repo}:${relPath}`,

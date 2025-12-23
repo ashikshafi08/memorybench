@@ -550,6 +550,7 @@ export function prepareBenchmarkContexts(
 ): PreparedData[] {
 	const allContexts: PreparedData[] = [];
 	const seenIds = new Set<string>();
+	let skippedEmpty = 0;
 
 	for (const item of items) {
 		for (const context of item.contexts) {
@@ -558,6 +559,12 @@ export function prepareBenchmarkContexts(
 				continue;
 			}
 			seenIds.add(context.id);
+
+			// Skip empty contexts (safety check)
+			if (!context.content || context.content.trim().length === 0) {
+				skippedEmpty++;
+				continue;
+			}
 
 			allContexts.push({
 				...context,
@@ -568,6 +575,11 @@ export function prepareBenchmarkContexts(
 				},
 			});
 		}
+	}
+
+	// Log summary if any were skipped
+	if (skippedEmpty > 0) {
+		console.log(`Filtered ${skippedEmpty} empty contexts before ingestion`);
 	}
 
 	return allContexts;

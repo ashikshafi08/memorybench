@@ -77,13 +77,30 @@ memorybench export <runId> --format json -o results.json
 
 ## Available Providers
 
+### Code Chunking Providers (Production)
+
 | Provider | Type | Description |
 |----------|------|-------------|
-| **AQRAG** | Local (SQLite) | Anticipatory Question RAG with question generation |
-| **ContextualRetrieval** | Local (PostgreSQL) | Anthropic's contextual retrieval with document-level context |
-| **OpenRouterRAG** | Local (PostgreSQL) | Simple RAG using OpenRouter embeddings |
-| **Mem0** | Hosted | Mem0 memory layer API |
-| **Supermemory** | Hosted | Supermemory.ai production API |
+| **code-chunk-ast** | Local | AST-based semantic chunking for code |
+| **code-chunk-fixed** | Local | Fixed-size chunking for code |
+| **chonkie-code** | Local | Python-based code chunking (requires Python 3.10+) |
+| **chonkie-recursive** | Local | Recursive text chunking via Python |
+| **langchain-code** | Local | LangChain-based code splitter |
+| **llamaindex-code** | Local | LlamaIndex-based code splitter |
+| **full-context-session** | Local | Full context per session (no chunking) |
+| **full-context-turn** | Local | Full context per conversation turn |
+
+### Experimental Providers (Coming Soon)
+
+These memory providers are planned but not yet fully implemented:
+
+| Provider | Type | Status |
+|----------|------|--------|
+| **AQRAG** | Local | Needs PostgreSQL + adapter implementation |
+| **ContextualRetrieval** | Local | Needs adapter implementation |
+| **Mem0** | Hosted | API integration planned |
+| **Supermemory** | Hosted | API integration planned |
+| **Zep** | Hosted | API integration planned |
 
 ## Available Benchmarks
 

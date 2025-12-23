@@ -302,14 +302,5 @@ export class NDCGAtKMetric implements MetricCalculator {
 }
 
 // Pre-built instances for common K values
-export class NDCGAt5Metric extends NDCGAtKMetric {
-	constructor() {
-		super(5);
-	}
-}
-
-export class NDCGAt10Metric extends NDCGAtKMetric {
-	constructor() {
-		super(10);
-	}
-}
+export const NDCGAt5Metric = new NDCGAtKMetric(5);
+export const NDCGAt10Metric = new NDCGAtKMetric(10);

@@ -9,9 +9,9 @@
  *   - LangChain package: pip install langchain-text-splitters
  */
 
-import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { callPythonBridge, isPythonPackageAvailable } from "./python-bridge-utils.ts";
 
 // Resolve path to the Python script
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -61,62 +61,20 @@ export async function callLangChain(
 		String(options.overlap ?? 100),
 	];
 
-	return new Promise((resolve, reject) => {
-		const proc = spawn(pythonPath, args, {
-			stdio: ["pipe", "pipe", "pipe"],
-		});
-
-		let stdout = "";
-		let stderr = "";
-
-		proc.stdout.on("data", (data: Buffer) => {
-			stdout += data.toString();
-		});
-
-		proc.stderr.on("data", (data: Buffer) => {
-			stderr += data.toString();
-		});
-
-		proc.on("close", (exitCode: number | null) => {
-			if (exitCode !== 0) {
-				reject(
-					new Error(
-						`LangChain bridge failed with exit code ${exitCode}: ${stderr || stdout}`,
-					),
-				);
-				return;
-			}
-
-			try {
-				const result = JSON.parse(stdout);
-				if (result.error) {
-					reject(new Error(`LangChain error: ${result.error}`));
-					return;
-				}
-				resolve(result as LangChainChunkResult[]);
-			} catch (parseError) {
-				reject(
-					new Error(
-						`Failed to parse LangChain output: ${stdout}\nStderr: ${stderr}`,
-					),
-				);
-			}
-		});
-
-		proc.on("error", (err: Error) => {
-			reject(
-				new Error(
-					`Failed to spawn LangChain process: ${err.message}\n` +
-						`Make sure Python is installed and LangChain is available:\n` +
-						`  pip install langchain-text-splitters`,
-				),
-			);
-		});
-
-		// Write code to stdin
-		proc.stdin.write(code);
-		proc.stdin.end();
-	});
+	try {
+		return await callPythonBridge<LangChainChunkResult[]>(
+			SCRIPT_PATH,
+			args,
+			code,
+			pythonPath,
+			"LangChain",
+		);
+	} catch (error) {
+		throw new Error(
+			`${error}\nMake sure Python is installed and LangChain is available:\n` +
+				`  pip install langchain-text-splitters`,
+		);
+	}
 }
 
 /**
@@ -125,30 +83,8 @@ export async function callLangChain(
 export async function isLangChainAvailable(
 	pythonPath = "python3",
 ): Promise<boolean> {
-	return new Promise((resolve) => {
-		const proc = spawn(
-			pythonPath,
-			[
-				"-c",
-				"from langchain_text_splitters import RecursiveCharacterTextSplitter; print('ok')",
-			],
-			{
-				stdio: ["ignore", "pipe", "pipe"],
-			},
-		);
-
-		let stdout = "";
-
-		proc.stdout.on("data", (data: Buffer) => {
-			stdout += data.toString();
-		});
-
-		proc.on("close", (code: number | null) => {
-			resolve(code === 0 && stdout.trim() === "ok");
-		});
-
-		proc.on("error", () => {
-			resolve(false);
-		});
-	});
+	return isPythonPackageAvailable(
+		pythonPath,
+		"from langchain_text_splitters import RecursiveCharacterTextSplitter",
+	);
 }

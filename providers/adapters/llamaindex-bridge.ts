@@ -9,9 +9,9 @@
  *   - LlamaIndex package: pip install llama-index-core
  */
 
-import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { callPythonBridge, isPythonPackageAvailable } from "./python-bridge-utils.ts";
 
 // Resolve path to the Python script
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,62 +54,20 @@ export async function callLlamaIndex(
 		options.pythonPath || process.env.LLAMAINDEX_PYTHON_PATH || "python3";
 	const args = [SCRIPT_PATH, filepath, String(options.chunkSize)];
 
-	return new Promise((resolve, reject) => {
-		const proc = spawn(pythonPath, args, {
-			stdio: ["pipe", "pipe", "pipe"],
-		});
-
-		let stdout = "";
-		let stderr = "";
-
-		proc.stdout.on("data", (data: Buffer) => {
-			stdout += data.toString();
-		});
-
-		proc.stderr.on("data", (data: Buffer) => {
-			stderr += data.toString();
-		});
-
-		proc.on("close", (exitCode: number | null) => {
-			if (exitCode !== 0) {
-				reject(
-					new Error(
-						`LlamaIndex bridge failed with exit code ${exitCode}: ${stderr || stdout}`,
-					),
-				);
-				return;
-			}
-
-			try {
-				const result = JSON.parse(stdout);
-				if (result.error) {
-					reject(new Error(`LlamaIndex error: ${result.error}`));
-					return;
-				}
-				resolve(result as LlamaIndexChunkResult[]);
-			} catch (parseError) {
-				reject(
-					new Error(
-						`Failed to parse LlamaIndex output: ${stdout}\nStderr: ${stderr}`,
-					),
-				);
-			}
-		});
-
-		proc.on("error", (err: Error) => {
-			reject(
-				new Error(
-					`Failed to spawn LlamaIndex process: ${err.message}\n` +
-						`Make sure Python is installed and LlamaIndex is available:\n` +
-						`  pip install llama-index-core`,
-				),
-			);
-		});
-
-		// Write code to stdin
-		proc.stdin.write(code);
-		proc.stdin.end();
-	});
+	try {
+		return await callPythonBridge<LlamaIndexChunkResult[]>(
+			SCRIPT_PATH,
+			args,
+			code,
+			pythonPath,
+			"LlamaIndex",
+		);
+	} catch (error) {
+		throw new Error(
+			`${error}\nMake sure Python is installed and LlamaIndex is available:\n` +
+				`  pip install llama-index-core`,
+		);
+	}
 }
 
 /**
@@ -118,27 +76,8 @@ export async function callLlamaIndex(
 export async function isLlamaIndexAvailable(
 	pythonPath = "python3",
 ): Promise<boolean> {
-	return new Promise((resolve) => {
-		const proc = spawn(
-			pythonPath,
-			["-c", "from llama_index.core.node_parser import CodeSplitter; print('ok')"],
-			{
-				stdio: ["ignore", "pipe", "pipe"],
-			},
-		);
-
-		let stdout = "";
-
-		proc.stdout.on("data", (data: Buffer) => {
-			stdout += data.toString();
-		});
-
-		proc.on("close", (code: number | null) => {
-			resolve(code === 0 && stdout.trim() === "ok");
-		});
-
-		proc.on("error", () => {
-			resolve(false);
-		});
-	});
+	return isPythonPackageAvailable(
+		pythonPath,
+		"from llama_index.core.node_parser import CodeSplitter",
+	);
 }

@@ -126,14 +126,5 @@ export class FileRecallAtKMetric implements MetricCalculator {
 }
 
 // Pre-built instances for common K values
-export class FileRecallAt5Metric extends FileRecallAtKMetric {
-	constructor() {
-		super(5);
-	}
-}
-
-export class FileRecallAt10Metric extends FileRecallAtKMetric {
-	constructor() {
-		super(10);
-	}
-}
+export const FileRecallAt5Metric = new FileRecallAtKMetric(5);
+export const FileRecallAt10Metric = new FileRecallAtKMetric(10);

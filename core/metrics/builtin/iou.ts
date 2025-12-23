@@ -185,26 +185,7 @@ export class IoUAtKMetric implements MetricCalculator {
 }
 
 // Pre-built instances for common K values
-export class IoUAt1Metric extends IoUAtKMetric {
-	constructor() {
-		super(1);
-	}
-}
-
-export class IoUAt3Metric extends IoUAtKMetric {
-	constructor() {
-		super(3);
-	}
-}
-
-export class IoUAt5Metric extends IoUAtKMetric {
-	constructor() {
-		super(5);
-	}
-}
-
-export class IoUAt10Metric extends IoUAtKMetric {
-	constructor() {
-		super(10);
-	}
-}
+export const IoUAt1Metric = new IoUAtKMetric(1);
+export const IoUAt3Metric = new IoUAtKMetric(3);
+export const IoUAt5Metric = new IoUAtKMetric(5);
+export const IoUAt10Metric = new IoUAtKMetric(10);

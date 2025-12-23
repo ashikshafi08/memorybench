@@ -48,12 +48,12 @@ describe("NDCGAtKMetric", () => {
 		});
 
 		it("has correct name and aliases", () => {
-			const metric5 = new NDCGAt5Metric();
+			const metric5 = NDCGAt5Metric;
 			expect(metric5.name).toBe("ndcg_at_5");
 			expect(metric5.aliases).toContain("ndcg@5");
 			expect(metric5.aliases).toContain("ndcg_5");
 
-			const metric10 = new NDCGAt10Metric();
+			const metric10 = NDCGAt10Metric;
 			expect(metric10.name).toBe("ndcg_at_10");
 			expect(metric10.aliases).toContain("ndcg@10");
 		});

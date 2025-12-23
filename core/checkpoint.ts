@@ -8,7 +8,7 @@ import { dirname } from "node:path";
 
 export interface CheckpointItem {
 	itemId: string;
-	status: "pending" | "in_progress" | "completed" | "failed";
+	status: "pending" | "in_progress" | "completed" | "failed" | "skipped";
 	timestamp: string;
 	phase: "ingest" | "search" | "evaluate";
 	error?: string;
@@ -39,6 +39,7 @@ export interface CheckpointProgress {
 	failed: number;
 	inProgress: number;
 	pending: number;
+	skipped: number;
 }
 
 export class CheckpointManager {
@@ -143,8 +144,8 @@ export class CheckpointManager {
 			return false;
 		}
 
-		// Skip if completed at this phase or a later phase
-		if (item.status === "completed") {
+		// Skip if completed or skipped at this phase or a later phase
+		if (item.status === "completed" || item.status === "skipped") {
 			const phases = ["ingest", "search", "evaluate"];
 			const itemPhaseIndex = phases.indexOf(item.phase);
 			const targetPhaseIndex = phases.indexOf(phase);
@@ -208,6 +209,25 @@ export class CheckpointManager {
 	}
 
 	/**
+	 * Mark an item as skipped (e.g., empty file filtered out).
+	 */
+	async markSkipped(
+		runId: string,
+		benchmark: string,
+		provider: string,
+		itemId: string,
+		phase: "ingest" | "search" | "evaluate",
+		reason?: string,
+	): Promise<void> {
+		await this.updateItem(runId, benchmark, provider, itemId, {
+			status: "skipped",
+			phase,
+			timestamp: new Date().toISOString(),
+			error: reason,  // Reuse error field for skip reason
+		});
+	}
+
+	/**
 	 * Update an item in the checkpoint.
 	 */
 	private async updateItem(
@@ -257,6 +277,7 @@ export class CheckpointManager {
 			inProgress: checkpoint.items.filter((i) => i.status === "in_progress")
 				.length,
 			pending: checkpoint.items.filter((i) => i.status === "pending").length,
+			skipped: checkpoint.items.filter((i) => i.status === "skipped").length,
 		};
 	}
 

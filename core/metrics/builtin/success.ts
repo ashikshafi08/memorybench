@@ -86,14 +86,5 @@ export class SuccessAtKMetric implements MetricCalculator {
 	}
 }
 
-export class SuccessAt5Metric extends SuccessAtKMetric {
-	constructor() {
-		super(5);
-	}
-}
-
-export class SuccessAt10Metric extends SuccessAtKMetric {
-	constructor() {
-		super(10);
-	}
-}
+export const SuccessAt5Metric = new SuccessAtKMetric(5);
+export const SuccessAt10Metric = new SuccessAtKMetric(10);

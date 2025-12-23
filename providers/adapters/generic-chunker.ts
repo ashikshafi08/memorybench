@@ -9,6 +9,15 @@
  * Configuration (size, overlap, etc.) comes from config.local.chunking.
  */
 
+/**
+ * Represents a single chunking failure for tracking and reporting.
+ */
+export interface ChunkingFailure {
+	filepath: string;
+	error: string;
+	timestamp: string;
+}
+
 import type { ProviderConfig, PreparedData } from "../../core/config.ts";
 import { ChunkingProvider, type ChunkResult as BaseChunkResult } from "./chunking-base.ts";
 import {
@@ -26,6 +35,8 @@ import {
  */
 export class GenericChunkerProvider extends ChunkingProvider {
 	private readonly chunkerName: string;
+	/** Tracks chunking failures per runTag for reporting */
+	private readonly failureStats = new Map<string, ChunkingFailure[]>();
 
 	constructor(config: ProviderConfig) {
 		super(config);
@@ -93,15 +104,22 @@ export class GenericChunkerProvider extends ChunkingProvider {
 		try {
 			chunks = await chunker.chunkFn(data.content, filepath, chunkConfig);
 		} catch (error) {
-			// Log warning but continue - some files may fail to parse
+			// Track failure for reporting
+			this.trackFailure(runTag, filepath, String(error));
+
 			console.warn(
 				`Chunking failed for ${filepath} with ${this.chunkerName}: ${error}`,
 			);
-			return;
+
+			// Propagate error to checkpoint system instead of silent return
+			throw new Error(`Chunking failed for ${filepath}: ${error}`);
 		}
 
 		if (chunks.length === 0) {
-			return;
+			// Track empty results as failures
+			this.trackFailure(runTag, filepath, "Chunker returned 0 chunks");
+
+			throw new Error(`No chunks produced for ${filepath}`);
 		}
 
 		// Embed all chunks in a batch
@@ -126,6 +144,78 @@ export class GenericChunkerProvider extends ChunkingProvider {
 					...data.metadata,
 				},
 			});
+		}
+	}
+
+	/**
+	 * Track a chunking failure for later reporting.
+	 */
+	private trackFailure(runTag: string, filepath: string, error: string): void {
+		if (!this.failureStats.has(runTag)) {
+			this.failureStats.set(runTag, []);
+		}
+		this.failureStats.get(runTag)!.push({
+			filepath,
+			error,
+			timestamp: new Date().toISOString(),
+		});
+	}
+
+	/**
+	 * Get chunking failures for a specific run.
+	 */
+	getChunkingFailures(runTag: string): ChunkingFailure[] {
+		return this.failureStats.get(runTag) ?? [];
+	}
+
+	/**
+	 * Get failure summary for reporting.
+	 * Returns empty string if no failures.
+	 */
+	getFailureSummary(runTag: string): string {
+		const failures = this.getChunkingFailures(runTag);
+		if (failures.length === 0) return "";
+
+		// Group by error type
+		const errorCounts = new Map<string, number>();
+		for (const { error } of failures) {
+			// Take first part of error as the error type
+			const key = error.split(":")[0] ?? error;
+			errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
+		}
+
+		const lines = [`${failures.length} chunking failures:`];
+		for (const [errorType, count] of errorCounts) {
+			lines.push(`  - ${errorType}: ${count} files`);
+		}
+		return lines.join("\n");
+	}
+
+	/**
+	 * Check if failure rate exceeds threshold and throw if so.
+	 * Used for fail-fast behavior to detect systemic issues early.
+	 *
+	 * @param runTag - The run identifier
+	 * @param totalContexts - Total number of contexts attempted
+	 * @param threshold - Failure rate threshold (default 10%)
+	 */
+	checkFailureRate(
+		runTag: string,
+		totalContexts: number,
+		threshold = 0.1,
+	): void {
+		const failures = this.getChunkingFailures(runTag);
+		if (totalContexts === 0) return;
+
+		const failureRate = failures.length / totalContexts;
+
+		if (failureRate > threshold) {
+			throw new Error(
+				`Chunking failure rate too high: ${(failureRate * 100).toFixed(1)}% ` +
+					`(${failures.length}/${totalContexts}). ` +
+					`This likely indicates a configuration or infrastructure issue.\n` +
+					this.getFailureSummary(runTag),
+			);
 		}
 	}
 }
