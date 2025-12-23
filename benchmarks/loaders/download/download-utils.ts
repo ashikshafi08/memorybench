@@ -448,3 +448,54 @@ async function parquetToJson(parquetPath: string): Promise<any[]> {
 	const data = await parquetReadObjects({ file, compressors });
 	return data;
 }
+
+/**
+ * Download a raw file from HuggingFace Hub.
+ * Uses the resolve endpoint to download files directly.
+ */
+export async function downloadHuggingFaceRawFile(params: {
+	dataset: string;
+	filename: string;
+	destPath: string;
+	branch?: string;
+}): Promise<void> {
+	const { dataset, filename, destPath, branch = "main" } = params;
+
+	console.log(`Downloading ${filename} from HuggingFace ${dataset}...`);
+
+	// HuggingFace Hub raw file URL format
+	const url = `https://huggingface.co/datasets/${dataset}/resolve/${branch}/${filename}`;
+
+	const response = await fetchWithRetry(url);
+	const content = await response.text();
+
+	await mkdir(dirname(destPath), { recursive: true });
+	await writeFile(destPath, content);
+
+	console.log(`Saved to ${destPath}`);
+}
+
+/**
+ * Download a raw file from GitHub.
+ */
+export async function downloadGitHubRawFile(params: {
+	repo: string;
+	path: string;
+	destPath: string;
+	branch?: string;
+}): Promise<void> {
+	const { repo, path, destPath, branch = "main" } = params;
+
+	console.log(`Downloading ${path} from GitHub ${repo}...`);
+
+	// GitHub raw file URL format
+	const url = `https://raw.githubusercontent.com/${repo}/${branch}/${path}`;
+
+	const response = await fetchWithRetry(url);
+	const content = await response.text();
+
+	await mkdir(dirname(destPath), { recursive: true });
+	await writeFile(destPath, content);
+
+	console.log(`Saved to ${destPath}`);
+}

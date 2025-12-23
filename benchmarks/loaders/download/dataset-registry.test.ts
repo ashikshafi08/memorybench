@@ -132,11 +132,25 @@ describe("Built-in datasets", () => {
 
 	it("lists all built-in dataset names", () => {
 		const names = getDatasetNames();
+		// Code retrieval datasets
 		expect(names).toContain("repoeval");
 		expect(names).toContain("repobench-r");
 		expect(names).toContain("crosscodeeval");
 		expect(names).toContain("swebench-lite");
-		expect(names.length).toBe(4);
+		// Memory benchmark datasets
+		expect(names).toContain("longmemeval");
+		expect(names).toContain("locomo");
+		expect(names.length).toBe(6);
+	});
+
+	it("registers longmemeval dataset", () => {
+		expect(getDataset("longmemeval")).toBeDefined();
+		expect(getDataset("longmemeval")?.name).toBe("longmemeval");
+	});
+
+	it("registers locomo dataset", () => {
+		expect(getDataset("locomo")).toBeDefined();
+		expect(getDataset("locomo")?.name).toBe("locomo");
 	});
 });
 

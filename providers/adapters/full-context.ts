@@ -65,21 +65,31 @@ export class FullContextSessionProvider extends BaseProvider {
 				.map((ctx) => ctx.content)
 				.join("\n\n");
 			
+			// Preserve corpus IDs for relevance matching (LongMemEval uses "answer" in ID)
+			const corpusIds = sessionContexts
+				.map((ctx) => ctx.metadata?.corpusId as string | undefined)
+				.filter((id): id is string => !!id);
+			
+			// Use corpus ID if available (preserves "answer" marker for relevance)
+			const resultId = corpusIds[0] ?? `session-${sessionKey}`;
+			
 			results.push({
-				id: `session-${sessionKey}`,
+				id: resultId,
 				content: combinedContent,
 				score: 1.0, // Perfect score (all contexts included)
 				metadata: {
 					sessionKey,
 					count: sessionContexts.length,
 					baseline: "full-context-session",
+					corpusId: corpusIds[0], // Preserve for isRelevant
+					corpusIds, // All corpus IDs in this session
 				},
 			});
 		}
 
-		// Apply limit if specified
-		const limit = options?.limit ?? results.length;
-		return results.slice(0, limit);
+		// Full-context baseline ignores limit - return ALL contexts
+		// This is the point of a baseline: see if the model can find the answer with all context
+		return results;
 	}
 
 	async clear(runTag: string): Promise<void> {
@@ -122,19 +132,21 @@ export class FullContextTurnProvider extends BaseProvider {
 		}
 
 		// Return all turns as retrieved context
+		// Preserve corpus IDs for relevance matching (LongMemEval uses "answer" in ID)
 		const results: SearchResult[] = contexts.map((ctx) => ({
-			id: ctx.id,
+			id: (ctx.metadata?.corpusId as string | undefined) || ctx.id,
 			content: ctx.content,
 			score: 1.0, // Perfect score (all contexts included)
 			metadata: {
 				...ctx.metadata,
 				baseline: "full-context-turn",
+				corpusId: ctx.metadata?.corpusId, // Ensure corpusId is at top level
 			},
 		}));
 
-		// Apply limit if specified
-		const limit = options?.limit ?? results.length;
-		return results.slice(0, limit);
+		// Full-context baseline ignores limit - return ALL contexts
+		// This is the point of a baseline: see if the model can find the answer with all context
+		return results;
 	}
 
 	async clear(runTag: string): Promise<void> {

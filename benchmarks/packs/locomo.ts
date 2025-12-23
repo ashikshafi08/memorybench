@@ -61,9 +61,11 @@ Question: ${item.question} Short answer:`;
 	}
 	
 	// Default QA prompt for categories 1-4
+	// Note: LoCoMo requires temporal reasoning - relative dates like "yesterday" must be 
+	// converted to absolute dates based on the message timestamp.
 	const template = `${retrievedContext}
 
-Based on the above context, write an answer in the form of a short phrase for the following question. Answer with exact words from the context whenever possible.
+Based on the above context, answer the following question. If the answer involves a relative time expression (like "yesterday", "last week", "last year"), convert it to an absolute date using the timestamp shown in the context. Give a short, direct answer.
 
 Question: ${item.question} Short answer:`;
 	
@@ -196,6 +198,27 @@ export const locomoPack: BenchmarkPack = {
 		for (const evidenceId of evidenceIdSet) {
 			if (resultDialogIds.has(evidenceId)) {
 				return true;
+			}
+		}
+
+		// Fallback for external providers that re-chunk content and lose dialog IDs:
+		// Check if the answer text (or key answer words) appears in the retrieved content.
+		// This is a heuristic but better than always returning false.
+		if (item.answer && result.content) {
+			const answerLower = item.answer.toLowerCase().trim();
+			const contentLower = result.content.toLowerCase();
+			
+			// For short answers (< 20 chars), check exact substring match
+			if (answerLower.length < 20) {
+				if (contentLower.includes(answerLower)) return true;
+			} else {
+				// For longer answers, check if key words (3+ chars) appear
+				const answerWords = answerLower.split(/\s+/).filter(w => w.length >= 3);
+				if (answerWords.length > 0) {
+					const matches = answerWords.filter(w => contentLower.includes(w));
+					// If >50% of key words match, consider relevant
+					if (matches.length / answerWords.length > 0.5) return true;
+				}
 			}
 		}
 

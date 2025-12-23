@@ -23,6 +23,8 @@ import {
 	findFilesWithExtensions,
 	fetchHuggingFaceDataset,
 	fetchHuggingFaceDatasetViaParquet,
+	downloadHuggingFaceRawFile,
+	downloadGitHubRawFile,
 } from "./download-utils.ts";
 import {
 	getDatasetConfig,
@@ -781,6 +783,126 @@ function createSWEBenchLiteDataset(): DatasetDefinition {
 }
 
 // ============================================================================
+// LongMemEval Dataset (Memory Benchmark)
+// ============================================================================
+
+function createLongMemEvalDataset(): DatasetDefinition {
+	const config = getDatasetConfig("longmemeval");
+	// Use localPath from YAML config, fallback to default location
+	const dataDir = () => process.env[config?.envVar ?? "LONGMEMEVAL_DATA_DIR"] ||
+		join(DATASETS_BASE_DIR, "..", "LongMemEval", "datasets");
+
+	return {
+		name: "longmemeval",
+		dataDir: dataDir(),
+		envVar: config?.envVar ?? "LONGMEMEVAL_DATA_DIR",
+
+		isAvailable: () => existsSync(join(dataDir(), "longmemeval_s_cleaned.json")),
+
+		download: async () => {
+			console.log("Downloading LongMemEval benchmark data...\n");
+
+			const destPath = join(dataDir(), "longmemeval_s_cleaned.json");
+			if (existsSync(destPath)) {
+				console.log("LongMemEval data already exists, skipping...");
+				return;
+			}
+
+			// Download raw JSON from HuggingFace
+			await downloadHuggingFaceRawFile({
+				dataset: "xiaowu0162/longmemeval-cleaned",
+				filename: "longmemeval_s_cleaned.json",
+				destPath,
+			});
+
+			console.log("\nDownload complete!");
+		},
+
+		loadTasks: async () => {
+			const dataPath = join(dataDir(), "longmemeval_s_cleaned.json");
+			if (!existsSync(dataPath)) {
+				throw new Error(`LongMemEval data not found at ${dataPath}`);
+			}
+
+			const content = await readFile(dataPath, "utf-8");
+			const tasks = JSON.parse(content) as any[];
+			return tasks.map((t) => ({ ...t, id: t.question_id || t.id }));
+		},
+
+		// Memory benchmarks use schema-based loading, this is just for download availability
+		toBenchmarkItem: async (task) => {
+			return {
+				id: task.id,
+				question: task.question || "",
+				answer: task.answer || "",
+				contexts: [],
+				metadata: task,
+			};
+		},
+	};
+}
+
+// ============================================================================
+// LoCoMo Dataset (Memory Benchmark)
+// ============================================================================
+
+function createLoCoMoDataset(): DatasetDefinition {
+	const config = getDatasetConfig("locomo");
+	// Use localPath from YAML config, fallback to default location
+	const dataDir = () => process.env[config?.envVar ?? "LOCOMO_DATA_DIR"] ||
+		join(DATASETS_BASE_DIR, "..", "data");
+
+	return {
+		name: "locomo",
+		dataDir: dataDir(),
+		envVar: config?.envVar ?? "LOCOMO_DATA_DIR",
+
+		isAvailable: () => existsSync(join(dataDir(), "locomo10.json")),
+
+		download: async () => {
+			console.log("Downloading LoCoMo benchmark data...\n");
+
+			const destPath = join(dataDir(), "locomo10.json");
+			if (existsSync(destPath)) {
+				console.log("LoCoMo data already exists, skipping...");
+				return;
+			}
+
+			// Download raw JSON from GitHub
+			await downloadGitHubRawFile({
+				repo: "snap-research/locomo",
+				path: "data/locomo10.json",
+				destPath,
+			});
+
+			console.log("\nDownload complete!");
+		},
+
+		loadTasks: async () => {
+			const dataPath = join(dataDir(), "locomo10.json");
+			if (!existsSync(dataPath)) {
+				throw new Error(`LoCoMo data not found at ${dataPath}`);
+			}
+
+			const content = await readFile(dataPath, "utf-8");
+			const tasks = JSON.parse(content) as any[];
+			return tasks.map((t) => ({ ...t, id: t.sample_id || t.id }));
+		},
+
+		// Memory benchmarks use schema-based loading, this is just for download availability
+		toBenchmarkItem: async (task) => {
+			return {
+				id: task.id,
+				question: "",
+				answer: "",
+				contexts: [],
+				metadata: task,
+			};
+		},
+	};
+}
+
+// ============================================================================
 // Registry
 // ============================================================================
 
@@ -828,11 +950,14 @@ let globalDatasetRegistry: DatasetRegistry | null = null;
 export function getDatasetRegistry(): DatasetRegistry {
 	if (!globalDatasetRegistry) {
 		globalDatasetRegistry = new DatasetRegistry();
-		// Register built-in datasets
+		// Register code retrieval datasets
 		globalDatasetRegistry.register(createRepoEvalDataset());
 		globalDatasetRegistry.register(createRepoBenchRDataset());
 		globalDatasetRegistry.register(createCrossCodeEvalDataset());
 		globalDatasetRegistry.register(createSWEBenchLiteDataset());
+		// Register memory benchmark datasets
+		globalDatasetRegistry.register(createLongMemEvalDataset());
+		globalDatasetRegistry.register(createLoCoMoDataset());
 	}
 	return globalDatasetRegistry;
 }

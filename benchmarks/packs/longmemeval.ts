@@ -288,6 +288,27 @@ export const longMemEvalPack: BenchmarkPack = {
 			if (stripped !== corpusId && set.has(stripped)) return true;
 		}
 
+		// Fallback for external providers that re-chunk content and lose corpus IDs:
+		// Check if the answer text (or key answer words) appears in the retrieved content.
+		// This is a heuristic but better than always returning false.
+		if (item.answer && result.content) {
+			const answerLower = item.answer.toLowerCase().trim();
+			const contentLower = result.content.toLowerCase();
+			
+			// For short answers (< 20 chars), check exact substring match
+			if (answerLower.length < 20) {
+				if (contentLower.includes(answerLower)) return true;
+			} else {
+				// For longer answers, check if key words (3+ chars) appear
+				const answerWords = answerLower.split(/\s+/).filter(w => w.length >= 3);
+				if (answerWords.length > 0) {
+					const matches = answerWords.filter(w => contentLower.includes(w));
+					// If >50% of key words match, consider relevant
+					if (matches.length / answerWords.length > 0.5) return true;
+				}
+			}
+		}
+
 		return false;
 	},
 };

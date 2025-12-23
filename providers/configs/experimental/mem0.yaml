@@ -8,12 +8,14 @@ tags:
   - memory-layer
 
 connection:
+  # Note: MEM0_BASE_URL should NOT include /v1 - paths include the version
   baseUrl: "${MEM0_API_URL:-https://api.mem0.ai}"
   timeout: 30000
 
 auth:
-  type: bearer
+  type: token
   header: "Authorization"
+  prefix: "Token "
   envVar: "MEM0_API_KEY"
 
 scoping:
@@ -29,19 +31,17 @@ endpoints:
         - role: "user"
           content: "$.content"
       user_id: "$.runTag"
-      metadata:
-        benchmarkId: "$.metadata.benchmarkId"
-        itemId: "$.metadata.itemId"
+      infer: false
 
   search:
     method: POST
-    path: /v2/memories/search/
+    path: /v1/memories/search/
     body:
       query: "$.query"
       user_id: "$.runTag"
       limit: 10
     response:
-      results: "$.results"
+      results: "$"
       contentField: "$.memory"
       scoreField: "$.score"
 

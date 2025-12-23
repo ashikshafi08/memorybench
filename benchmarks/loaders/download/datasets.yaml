@@ -116,3 +116,26 @@ datasets:
       split: test
       maxRows: 10000
     outputFile: swebench-lite.json
+
+  # Memory Benchmarks
+  longmemeval:
+    description: "LongMemEval multi-session long-term memory evaluation"
+    envVar: LONGMEMEVAL_DATA_DIR
+
+    source:
+      type: huggingface_raw
+      dataset: xiaowu0162/longmemeval-cleaned
+      filename: longmemeval_s_cleaned.json
+    outputFile: longmemeval_s_cleaned.json
+    localPath: benchmarks/LongMemEval/datasets
+
+  locomo:
+    description: "LoCoMo long-form conversation memory benchmark"
+    envVar: LOCOMO_DATA_DIR
+
+    source:
+      type: github_raw
+      repo: snap-research/locomo
+      path: data/locomo10.json
+    outputFile: locomo10.json
+    localPath: benchmarks/data

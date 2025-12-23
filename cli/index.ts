@@ -4,6 +4,38 @@
  * Provides commands for listing, describing, and running benchmarks.
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+// Load .env file if it exists (Bun auto-loads when run via `bun run`, but not for linked CLI)
+const envPath = join(process.cwd(), ".env");
+if (existsSync(envPath)) {
+	try {
+		const content = readFileSync(envPath, "utf-8");
+		for (const line of content.split("\n")) {
+			const trimmed = line.trim();
+			if (trimmed && !trimmed.startsWith("#")) {
+				const eqIndex = trimmed.indexOf("=");
+				if (eqIndex > 0) {
+					const key = trimmed.slice(0, eqIndex).trim();
+					let value = trimmed.slice(eqIndex + 1).trim();
+					// Remove surrounding quotes
+					if ((value.startsWith('"') && value.endsWith('"')) ||
+						(value.startsWith("'") && value.endsWith("'"))) {
+						value = value.slice(1, -1);
+					}
+					// Only set if not already defined
+					if (!process.env[key]) {
+						process.env[key] = value;
+					}
+				}
+			}
+		}
+	} catch {
+		// Ignore errors loading .env
+	}
+}
+
 import { Registry, getRegistry } from "../core/registry.ts";
 import { CheckpointManager } from "../core/checkpoint.ts";
 import { BenchmarkRunner, type ProgressCallback, type RunResult } from "../core/runner.ts";

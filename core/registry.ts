@@ -88,10 +88,10 @@ export class Registry {
 	}
 
 	/**
-	 * Discover and load provider configs from providers/configs/*.yaml
+	 * Discover and load provider configs from providers/configs (including subdirectories)
 	 */
 	private async discoverProviders(): Promise<void> {
-		const pattern = `${this.basePath}/providers/configs/*.yaml`;
+		const pattern = `${this.basePath}/providers/configs/**/*.yaml`;
 		const files = await glob(pattern);
 
 		for (const file of files) {

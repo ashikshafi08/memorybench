@@ -558,6 +558,98 @@ export async function evaluateWithLLMJudge(
 }
 
 /**
+ * Judge whether a retrieved chunk is relevant to answering a question.
+ * Uses LLM to evaluate semantic relevance when corpus ID matching fails.
+ */
+export async function judgeRelevance(
+	question: string,
+	chunk: string,
+	options?: {
+		model?: string;
+		groundTruthAnswer?: string;
+	},
+): Promise<{ relevant: boolean; confidence: number; reasoning: string }> {
+	const modelString = options?.model ?? "openrouter/openai/gpt-4o-mini";
+	const model = getModelProvider(modelString);
+
+	// Build prompt that considers both the question and optionally the expected answer
+	const answerContext = options?.groundTruthAnswer
+		? `\nExpected Answer: ${options.groundTruthAnswer}`
+		: "";
+
+	const prompt = `You are evaluating whether a retrieved text chunk is relevant to answering a question.
+
+Question: ${question}${answerContext}
+
+Retrieved Chunk:
+"""
+${chunk.slice(0, 2000)}
+"""
+
+Is this chunk relevant to answering the question? A chunk is relevant if it:
+1. Contains information that helps answer the question
+2. Contains context needed to understand the answer
+3. Contains the answer itself or key parts of it
+
+Respond with ONLY "yes" or "no" followed by a brief explanation (1 sentence).`;
+
+	const { text } = await generateText({
+		model,
+		prompt,
+		temperature: 0,
+	});
+
+	const lowerText = text.toLowerCase().trim();
+	const relevant = lowerText.startsWith("yes");
+
+	return {
+		relevant,
+		confidence: relevant ? 0.8 : 0.2, // Simple confidence estimate
+		reasoning: text.trim(),
+	};
+}
+
+/**
+ * Batch judge relevance for multiple chunks (more efficient).
+ */
+export async function judgeRelevanceBatch(
+	question: string,
+	chunks: Array<{ id: string; content: string }>,
+	options?: {
+		model?: string;
+		groundTruthAnswer?: string;
+		maxConcurrent?: number;
+	},
+): Promise<Map<string, boolean>> {
+	const results = new Map<string, boolean>();
+	const maxConcurrent = options?.maxConcurrent ?? 5;
+
+	// Process in batches to avoid rate limits
+	for (let i = 0; i < chunks.length; i += maxConcurrent) {
+		const batch = chunks.slice(i, i + maxConcurrent);
+		const promises = batch.map(async (chunk) => {
+			try {
+				const result = await judgeRelevance(question, chunk.content, {
+					model: options?.model,
+					groundTruthAnswer: options?.groundTruthAnswer,
+				});
+				return { id: chunk.id, relevant: result.relevant };
+			} catch {
+				// On error, default to not relevant
+				return { id: chunk.id, relevant: false };
+			}
+		});
+
+		const batchResults = await Promise.all(promises);
+		for (const { id, relevant } of batchResults) {
+			results.set(id, relevant);
+		}
+	}
+
+	return results;
+}
+
+/**
  * Simple exact match evaluation (no LLM required).
  */
 export function evaluateExactMatch(
