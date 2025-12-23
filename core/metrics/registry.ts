@@ -1,33 +1,24 @@
 /**
  * Metric Registry - central registry for metric calculators.
  * Inspired by OpenBench's pluggable metric pattern.
+ *
+ * Now extends BaseRegistry for consistent registry behavior across the codebase.
  */
 
 import type { EvalResult } from "../config.ts";
 import type { MetricCalculator, MetricResult } from "./interface.ts";
-
-/**
- * Error thrown when an unknown metric is requested.
- */
-export class UnknownMetricError extends Error {
-	constructor(
-		public readonly requestedMetric: string,
-		public readonly availableMetrics: string[],
-	) {
-		super(
-			`Unknown metric "${requestedMetric}". Available: ${availableMetrics.join(", ")}`,
-		);
-		this.name = "UnknownMetricError";
-	}
-}
+import { BaseRegistry, RegistryNotFoundError } from "../registry/index.ts";
 
 /**
  * Central registry for metric calculators.
  * Supports registration by name and aliases, and batch computation.
+ *
+ * Extends BaseRegistry for core registry operations (register, get, has, list).
  */
-export class MetricRegistry {
-	private calculators = new Map<string, MetricCalculator>();
-	private aliasMap = new Map<string, string>(); // alias -> primary name
+export class MetricRegistry extends BaseRegistry<MetricCalculator> {
+	constructor() {
+		super({ name: "MetricRegistry", throwOnConflict: true });
+	}
 
 	/**
 	 * Register a metric calculator.
@@ -35,67 +26,40 @@ export class MetricRegistry {
 	 * @throws Error if the metric name or any alias is already registered
 	 */
 	register(calculator: MetricCalculator): void {
-		const { name, aliases = [] } = calculator;
-
-		// Check for conflicts
-		if (this.calculators.has(name) || this.aliasMap.has(name)) {
-			throw new Error(`Metric "${name}" is already registered`);
-		}
-
-		for (const alias of aliases) {
-			if (this.calculators.has(alias) || this.aliasMap.has(alias)) {
-				throw new Error(
-					`Metric alias "${alias}" conflicts with existing metric`,
-				);
-			}
-		}
-
-		// Register the calculator
-		this.calculators.set(name, calculator);
-
-		// Register aliases
-		for (const alias of aliases) {
-			this.aliasMap.set(alias, name);
-		}
-	}
-
-	/**
-	 * Check if a metric (by name or alias) is registered.
-	 */
-	has(nameOrAlias: string): boolean {
-		return (
-			this.calculators.has(nameOrAlias) || this.aliasMap.has(nameOrAlias)
-		);
+		this.registerItem(calculator.name, calculator, calculator.aliases);
 	}
 
 	/**
 	 * Get a metric calculator by name or alias.
+	 * Returns undefined if not found (consistent with base class).
 	 * @param nameOrAlias - Metric name or alias
-	 * @throws UnknownMetricError if the metric is not registered
 	 */
-	get(nameOrAlias: string): MetricCalculator {
-		// Direct lookup
-		if (this.calculators.has(nameOrAlias)) {
-			return this.calculators.get(nameOrAlias)!;
-		}
+	override get(nameOrAlias: string): MetricCalculator | undefined {
+		return super.get(nameOrAlias);
+	}
 
-		// Alias lookup
-		const primaryName = this.aliasMap.get(nameOrAlias);
-		if (primaryName && this.calculators.has(primaryName)) {
-			return this.calculators.get(primaryName)!;
+	/**
+	 * Get a metric calculator by name or alias, throwing if not found.
+	 * Use this when you expect the metric to exist.
+	 * @param nameOrAlias - Metric name or alias
+	 * @throws RegistryNotFoundError if the metric is not registered
+	 */
+	getOrThrow(nameOrAlias: string): MetricCalculator {
+		const calculator = this.get(nameOrAlias);
+		if (!calculator) {
+			throw new RegistryNotFoundError("MetricRegistry", nameOrAlias, this.keys());
 		}
-
-		throw new UnknownMetricError(nameOrAlias, this.listMetricNames());
+		return calculator;
 	}
 
 	/**
 	 * Compute a single metric.
 	 * @param nameOrAlias - Metric name or alias
 	 * @param results - Evaluation results
-	 * @throws UnknownMetricError if the metric is not registered
+	 * @throws RegistryNotFoundError if the metric is not registered
 	 */
 	compute(nameOrAlias: string, results: EvalResult[]): MetricResult {
-		const calculator = this.get(nameOrAlias);
+		const calculator = this.getOrThrow(nameOrAlias);
 		return calculator.compute(results);
 	}
 
@@ -103,7 +67,7 @@ export class MetricRegistry {
 	 * Compute multiple metrics.
 	 * @param metricNames - List of metric names/aliases to compute
 	 * @param results - Evaluation results
-	 * @throws UnknownMetricError if any metric is not registered
+	 * @throws RegistryNotFoundError if any metric is not registered
 	 */
 	computeAll(metricNames: string[], results: EvalResult[]): MetricResult[] {
 		// Validate all metrics exist before computing any
@@ -114,7 +78,7 @@ export class MetricRegistry {
 		const seen = new Set<string>(); // Avoid duplicates if same metric requested via name and alias
 
 		for (const nameOrAlias of metricNames) {
-			const calculator = this.get(nameOrAlias);
+			const calculator = this.getOrThrow(nameOrAlias);
 
 			// Skip if already computed (via alias or name)
 			if (seen.has(calculator.name)) {
@@ -130,12 +94,12 @@ export class MetricRegistry {
 
 	/**
 	 * Validate that all metric names exist.
-	 * @throws UnknownMetricError if any metric is not registered
+	 * @throws RegistryNotFoundError if any metric is not registered
 	 */
 	validateMetrics(metricNames: string[]): void {
 		for (const name of metricNames) {
 			if (!this.has(name)) {
-				throw new UnknownMetricError(name, this.listMetricNames());
+				throw new RegistryNotFoundError("MetricRegistry", name, this.keys());
 			}
 		}
 	}
@@ -144,20 +108,13 @@ export class MetricRegistry {
 	 * List all registered metric names (primary names only, no aliases).
 	 */
 	listMetricNames(): string[] {
-		return Array.from(this.calculators.keys()).sort();
+		return this.keys();
 	}
 
 	/**
 	 * List all registered calculators.
 	 */
 	listCalculators(): MetricCalculator[] {
-		return Array.from(this.calculators.values());
-	}
-
-	/**
-	 * Get the total count of registered metrics.
-	 */
-	get size(): number {
-		return this.calculators.size;
+		return this.list();
 	}
 }

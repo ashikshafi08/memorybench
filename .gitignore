@@ -56,4 +56,5 @@ __pycache__/
 *.md
 !README.md
 !CLAUDE.md
+!DEVELOPER_GUIDE.md
 

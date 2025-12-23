@@ -784,19 +784,80 @@ function createSWEBenchLiteDataset(): DatasetDefinition {
 // Registry
 // ============================================================================
 
-const DATASETS: Record<string, DatasetDefinition> = {
-	repoeval: createRepoEvalDataset(),
-	"repobench-r": createRepoBenchRDataset(),
-	crosscodeeval: createCrossCodeEvalDataset(),
-	"swebench-lite": createSWEBenchLiteDataset(),
-};
+import { BaseRegistry } from "../../../core/registry/index.ts";
 
-export function getDataset(name: string): DatasetDefinition | undefined {
-	return DATASETS[name];
+/**
+ * Dataset Registry - manages code retrieval benchmark datasets.
+ *
+ * Extends BaseRegistry for consistent registry behavior across the codebase.
+ */
+export class DatasetRegistry extends BaseRegistry<DatasetDefinition> {
+	constructor() {
+		super({ name: "DatasetRegistry", throwOnConflict: true });
+	}
+
+	/**
+	 * Register a dataset definition.
+	 */
+	register(def: DatasetDefinition): void {
+		this.registerItem(def.name, def);
+	}
+
+	/**
+	 * Get a dataset by name.
+	 */
+	getDataset(name: string): DatasetDefinition | undefined {
+		return super.get(name);
+	}
+
+	/**
+	 * Get all registered dataset names.
+	 */
+	getDatasetNames(): string[] {
+		return this.keys();
+	}
 }
 
+// Singleton instance
+let globalDatasetRegistry: DatasetRegistry | null = null;
+
+/**
+ * Get the global dataset registry.
+ * Lazily initializes and registers built-in datasets.
+ */
+export function getDatasetRegistry(): DatasetRegistry {
+	if (!globalDatasetRegistry) {
+		globalDatasetRegistry = new DatasetRegistry();
+		// Register built-in datasets
+		globalDatasetRegistry.register(createRepoEvalDataset());
+		globalDatasetRegistry.register(createRepoBenchRDataset());
+		globalDatasetRegistry.register(createCrossCodeEvalDataset());
+		globalDatasetRegistry.register(createSWEBenchLiteDataset());
+	}
+	return globalDatasetRegistry;
+}
+
+/**
+ * Reset the dataset registry (for testing).
+ */
+export function resetDatasetRegistry(): void {
+	globalDatasetRegistry = null;
+}
+
+/**
+ * Get a dataset by name.
+ * @deprecated Use getDatasetRegistry().getDataset(name) instead
+ */
+export function getDataset(name: string): DatasetDefinition | undefined {
+	return getDatasetRegistry().getDataset(name);
+}
+
+/**
+ * Get all registered dataset names.
+ * @deprecated Use getDatasetRegistry().getDatasetNames() instead
+ */
 export function getDatasetNames(): string[] {
-	return Object.keys(DATASETS);
+	return getDatasetRegistry().getDatasetNames();
 }
 
 export { parsePatch, type PatchFile };

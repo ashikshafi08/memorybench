@@ -10,7 +10,7 @@ import type { Provider } from "../providers/base/types.ts";
 import { createProvider } from "../providers/factory.ts";
 import { GenericChunkerProvider } from "../providers/adapters/generic-chunker.ts";
 import { loadBenchmarkData, prepareBenchmarkContexts } from "../benchmarks/loaders/index.ts";
-import { getDefaultRegistry, UnknownMetricError } from "./metrics/index.ts";
+import { getDefaultRegistry } from "./metrics/index.ts";
 import type { MetricResult } from "./metrics/interface.ts";
 import { measureLatency, addTelemetryToMetadata, type ItemTelemetry } from "./telemetry.ts";
 import { evaluate as evaluateWithLLM, type EvaluationResult } from "../benchmarks/evaluators/llm-judge.ts";

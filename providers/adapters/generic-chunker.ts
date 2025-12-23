@@ -90,12 +90,6 @@ export class GenericChunkerProvider extends ChunkingProvider {
 		// Get chunking config from provider config
 		const chunkConfig: ChunkingConfig = this.config.local?.chunking ?? {};
 
-		// Get or create store for this runTag
-		if (!this.stores.has(runTag)) {
-			this.stores.set(runTag, []);
-		}
-		const store = this.stores.get(runTag)!;
-
 		// Extract filepath from metadata
 		const filepath = (data.metadata.filepath as string) || data.id;
 
@@ -126,25 +120,23 @@ export class GenericChunkerProvider extends ChunkingProvider {
 		const texts = chunks.map((c) => c.content);
 		const embedResult = await this.embeddingProvider!.embedBatch(texts);
 
-		// Store chunks with embeddings
-		for (let i = 0; i < chunks.length; i++) {
-			const chunk = chunks[i]!;
-			const embedding = embedResult.embeddings[i]!;
+		// Create StoredChunk objects with embeddings
+		const storedChunks = chunks.map((chunk, i) => ({
+			// Use custom ID if provided, otherwise fallback to index-based ID
+			id: chunk.id ?? `${filepath}:${i}`,
+			content: chunk.content,
+			embedding: embedResult.embeddings[i]!.vector,
+			metadata: {
+				filepath,
+				startLine: chunk.startLine,
+				endLine: chunk.endLine,
+				chunkIndex: i,
+				...data.metadata,
+			},
+		}));
 
-			store.push({
-				// Use custom ID if provided, otherwise fallback to index-based ID
-				id: chunk.id ?? `${filepath}:${i}`,
-				content: chunk.content,
-				embedding: embedding.vector,
-				metadata: {
-					filepath,
-					startLine: chunk.startLine,
-					endLine: chunk.endLine,
-					chunkIndex: i,
-					...data.metadata,
-				},
-			});
-		}
+		// Add all chunks to vector store
+		await this.vectorStore.add(runTag, storedChunks);
 	}
 
 	/**

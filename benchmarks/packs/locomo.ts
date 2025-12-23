@@ -1,19 +1,17 @@
 /**
  * LoCoMo Benchmark Pack
- * 
+ *
  * Paper-faithful implementation matching locomo/task_eval/evaluation.py
  * and locomo/task_eval/gpt_utils.py
- * 
+ *
  * Pack ID: locomo@paper-v1
  */
 
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { openai } from "@ai-sdk/openai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { BenchmarkPack, PackId, PromptArtifact, RunConfig, PackEvaluationResult } from "./interface.ts";
 import type { BenchmarkItem, SearchResult } from "../../core/config.ts";
 import { createPromptArtifact } from "./utils.ts";
+import { getModelProvider } from "../../core/llm/index.ts";
 import {
 	porterStem,
 	normalizeLocomoAnswer,
@@ -24,35 +22,6 @@ import {
 } from "../evaluators/llm-judge.ts";
 
 const PACK_ID: PackId = "locomo@paper-v1";
-
-/**
- * Get model provider for a model string (matches llm-judge.ts logic)
- */
-function getModelProvider(modelString: string): Parameters<typeof generateText>[0]["model"] {
-	const [provider, ...modelParts] = modelString.split("/");
-	const model = modelParts.join("/") || modelString;
-
-	switch (provider) {
-		case "anthropic":
-			return anthropic(model);
-		case "openai":
-			return openai(model);
-		case "openrouter": {
-			const openrouter = createOpenRouter({
-				apiKey: process.env.OPENROUTER_API_KEY,
-			});
-			return openrouter.chat(model) as unknown as Parameters<typeof generateText>[0]["model"];
-		}
-		default:
-			if (modelString.includes("gpt")) {
-				return openai(modelString);
-			}
-			if (modelString.includes("claude")) {
-				return anthropic(modelString);
-			}
-			return openai(modelString);
-	}
-}
 
 /**
  * Interpolate template variables in a prompt.

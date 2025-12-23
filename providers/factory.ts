@@ -10,6 +10,8 @@ import { FullContextSessionProvider, FullContextTurnProvider } from "./adapters/
 
 // Generic chunking provider (replaces 4 separate chunker adapters)
 import { GenericChunkerProvider } from "./adapters/generic-chunker.ts";
+// Chunker registry for auto-populating provider registry
+import { getChunkerNames } from "./adapters/chunker-registry.ts";
 
 /**
  * Registry of local provider adapters.
@@ -45,13 +47,11 @@ registerLocalAdapter("./adapters/generic-chunker.ts", GenericChunkerProvider);
 providerByNameRegistry.set("full-context-session", FullContextSessionProvider);
 providerByNameRegistry.set("full-context-turn", FullContextTurnProvider);
 
-// Register chunking providers by name (all use GenericChunkerProvider)
-providerByNameRegistry.set("code-chunk-fixed", GenericChunkerProvider);
-providerByNameRegistry.set("code-chunk-ast", GenericChunkerProvider);
-providerByNameRegistry.set("chonkie-code", GenericChunkerProvider);
-providerByNameRegistry.set("chonkie-recursive", GenericChunkerProvider);
-providerByNameRegistry.set("llamaindex-code", GenericChunkerProvider);
-providerByNameRegistry.set("langchain-code", GenericChunkerProvider);
+// Auto-populate chunking providers from chunker registry
+// This eliminates manual registration when adding new chunkers
+for (const chunkerName of getChunkerNames()) {
+	providerByNameRegistry.set(chunkerName, GenericChunkerProvider);
+}
 
 /**
  * Create a provider instance from config.

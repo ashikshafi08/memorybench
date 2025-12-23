@@ -106,7 +106,7 @@ export function getPackAndValidate(
 ): BenchmarkPack | undefined {
 	const registry = getPackRegistry();
 	const pack = packId
-		? registry.get(config.name, packId as `${string}@${string}`)
+		? registry.getByKey(config.name, packId as `${string}@${string}`)
 		: registry.getLatest(config.name);
 
 	if (pack) {

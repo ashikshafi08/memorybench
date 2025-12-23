@@ -3,63 +3,21 @@
  * Supports configurable answering models and judge prompts.
  */
 
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { openai } from "@ai-sdk/openai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
 import type { BenchmarkConfig, BenchmarkItem, SearchResult } from "../../core/config.ts";
+import { getModelProvider } from "../../core/llm/index.ts";
+import {
+	registerEvaluator,
+	getEvaluator,
+	getEvaluatorNames,
+	UnknownEvaluatorError,
+	type EvaluationResult,
+	type EvaluatorOptions,
+} from "./evaluator-registry.ts";
 
-export interface EvaluationResult {
-	answer: string;
-	judgeResponse: string;
-	correct: boolean;
-	score: number;
-	reasoning?: string;
-}
+// Re-export types from evaluator-registry for backward compatibility
+export type { EvaluationResult, EvaluatorOptions } from "./evaluator-registry.ts";
 
-export interface EvaluatorOptions {
-	answerPromptOverride?: string;
-	judgePromptOverride?: string;
-	answeringModel?: string;
-	judgeModel?: string;
-}
-
-/**
- * Get the model provider for a given model string.
- * Returns a model compatible with the AI SDK's generateText function.
- */
-function getModelProvider(modelString: string): Parameters<typeof generateText>[0]["model"] {
-	const [provider, ...modelParts] = modelString.split("/");
-	const model = modelParts.join("/") || modelString;
-
-	switch (provider) {
-		case "anthropic":
-			return anthropic(model);
-		case "google":
-			return google(model);
-		case "openai":
-			return openai(model);
-		case "openrouter": {
-			const openrouter = createOpenRouter({
-				apiKey: process.env.OPENROUTER_API_KEY,
-			});
-			// Use .chat() for chat models as per AI SDK OpenRouter docs
-			return openrouter.chat(model) as unknown as Parameters<typeof generateText>[0]["model"];
-		}
-		case "claude":
-			return anthropic(model);
-		default:
-			// Default to anthropic for common model names
-			if (modelString.includes("claude")) {
-				return anthropic(modelString);
-			}
-			if (modelString.includes("gpt")) {
-				return openai(modelString);
-			}
-			return anthropic(model);
-	}
-}
 
 /**
  * Interpolate template variables in a prompt.
@@ -624,6 +582,7 @@ export function evaluateExactMatch(
 
 /**
  * Evaluate based on the benchmark's configured method.
+ * Uses the EvaluatorRegistry for pluggable evaluators.
  */
 export async function evaluate(
 	item: BenchmarkItem,
@@ -632,29 +591,51 @@ export async function evaluate(
 	options?: EvaluatorOptions,
 ): Promise<EvaluationResult> {
 	const method = benchmarkConfig.evaluation?.method ?? "exact-match";
+	const customMethod = benchmarkConfig.evaluation?.customEvaluator;
 
-	switch (method) {
-		case "llm-judge":
-			return evaluateWithLLMJudge(item, searchResults, benchmarkConfig, options);
+	// First check for custom evaluator, then method
+	const evaluatorName = customMethod || method;
+	const evaluator = getEvaluator(evaluatorName);
 
-		case "exact-match":
-			return evaluateExactMatch(item, searchResults);
-
-		case "semantic-similarity":
-			// TODO: Implement semantic similarity
-			return evaluateExactMatch(item, searchResults);
-
-		case "custom":
-			// Custom evaluators (benchmark-specific)
-			if (benchmarkConfig.evaluation?.customEvaluator === "locomo-qa") {
-				return evaluateLocomoQA(item, searchResults, benchmarkConfig, options);
-			}
-			return evaluateExactMatch(item, searchResults);
-
-		default:
-			return evaluateExactMatch(item, searchResults);
+	if (!evaluator) {
+		throw new UnknownEvaluatorError(evaluatorName, getEvaluatorNames());
 	}
+
+	return evaluator.evaluateFn(item, searchResults, benchmarkConfig, options);
 }
+
+// ============================================================================
+// Built-in Evaluator Registration
+// ============================================================================
+
+// Register built-in evaluators at module load
+registerEvaluator({
+	name: "llm-judge",
+	description: "LLM-based evaluation with answer generation and judge",
+	evaluateFn: evaluateWithLLMJudge,
+});
+
+registerEvaluator({
+	name: "exact-match",
+	aliases: ["exact"],
+	description: "Simple exact match evaluation",
+	evaluateFn: (item, searchResults) => Promise.resolve(evaluateExactMatch(item, searchResults)),
+});
+
+registerEvaluator({
+	name: "semantic-similarity",
+	aliases: ["semantic"],
+	description: "Semantic similarity evaluation (falls back to exact-match)",
+	// TODO: Implement actual semantic similarity
+	evaluateFn: (item, searchResults) => Promise.resolve(evaluateExactMatch(item, searchResults)),
+});
+
+registerEvaluator({
+	name: "locomo-qa",
+	aliases: ["locomo"],
+	description: "LoCoMo QA evaluation with category-specific F1 scoring",
+	evaluateFn: evaluateLocomoQA,
+});
 
 // ---------------------------------------------------------------------------
 // LoCoMo helpers (exported for paper-faithful packs + label-grounded metrics)

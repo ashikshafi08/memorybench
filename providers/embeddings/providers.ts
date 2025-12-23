@@ -388,24 +388,32 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
 }
 
 // ============================================================================
-// Factory
+// Factory (Registry-based)
 // ============================================================================
+
+import {
+	getEmbeddingProviderRegistry,
+	registerEmbeddingProvider,
+} from "./registry.ts";
+
+// Register built-in providers
+registerEmbeddingProvider({
+	name: "openai",
+	factory: (config) => new OpenAIEmbeddingProvider(config),
+});
+
+registerEmbeddingProvider({
+	name: "voyage",
+	aliases: ["voyageai"],
+	factory: (config) => new VoyageEmbeddingProvider(config),
+});
 
 /**
  * Create an embedding provider from configuration.
+ * Uses registry-based dispatch for extensibility.
  */
 export function createEmbeddingProvider(config: EmbeddingProviderConfig): EmbeddingProvider {
-	switch (config.provider.toLowerCase()) {
-		case "openai":
-			return new OpenAIEmbeddingProvider(config);
-		case "voyage":
-		case "voyageai":
-			return new VoyageEmbeddingProvider(config);
-		default:
-			throw new Error(
-				`Unknown embedding provider: ${config.provider}. Supported providers: openai, voyage`,
-			);
-	}
+	return getEmbeddingProviderRegistry().create(config);
 }
 
 /**

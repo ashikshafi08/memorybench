@@ -6,13 +6,12 @@ import { JSONPath } from "jsonpath-plus";
 import type { BenchmarkConfig, BenchmarkItem, PreparedData } from "../../core/config.ts";
 import type { RawDataItem } from "./index.ts";
 import { loadLocalData } from "./local.ts";
-// Consolidated code retrieval loaders
-import {
-	loadRepoEvalData,
-	loadRepoBenchRData,
-	loadSWEBenchLiteData,
-	loadCrossCodeEvalData,
-} from "./generic-loader.ts";
+// Registry-based loader dispatch
+import { getLoader } from "./loader-registry.ts";
+import { ensureBuiltinLoadersRegistered } from "./builtin-loaders.ts";
+
+// Ensure built-in loaders are registered
+ensureBuiltinLoadersRegistered();
 
 /**
  * Load benchmark data from the configured source.
@@ -28,25 +27,56 @@ export async function loadBenchmarkData(
 		taskType?: "function" | "line" | "api";
 	},
 ): Promise<BenchmarkItem[]> {
-	// Special handling for code retrieval benchmarks with custom loaders
-	if (config.name === "repoeval") {
-		return loadRepoEvalData(config, options);
-	}
-	if (config.name === "repobench-r") {
-		return loadRepoBenchRData(config, options);
-	}
-	if (config.name === "swebench-lite") {
-		return loadSWEBenchLiteData(config, options);
-	}
-	if (config.name === "crosscodeeval") {
-		return loadCrossCodeEvalData(config, options);
+	// Check for registered loader
+	const loader = getLoader(config.name);
+
+	let items: BenchmarkItem[];
+
+	// Use custom loadFn if provided, otherwise use generic schema-based loading
+	if (loader?.loadFn) {
+		items = await loader.loadFn(config, options);
+	} else {
+		// Generic schema-based loading
+		const rawData = await loadRawData(config);
+		items = mapToBenchmarkItems(rawData, config);
 	}
 
-	// Load raw data
-	const rawData = await loadRawData(config);
+	// Apply post-processing hook if registered (with per-item error handling)
+	if (loader?.postProcessItem) {
+		const processedItems: BenchmarkItem[] = [];
+		const errors: Array<{ itemId: string; error: unknown }> = [];
 
-	// Map to BenchmarkItem format
-	let items = mapToBenchmarkItems(rawData, config);
+		for (const item of items) {
+			try {
+				processedItems.push(loader.postProcessItem(item));
+			} catch (error) {
+				console.warn(
+					`[loader] Failed to post-process item ${item.id}: ` +
+					`${error instanceof Error ? error.message : String(error)}`
+				);
+				errors.push({ itemId: item.id, error });
+			}
+		}
+
+		items = processedItems;
+
+		// Report summary if any items failed
+		if (errors.length > 0) {
+			const total = processedItems.length + errors.length;
+			const failureRate = (errors.length / total) * 100;
+			console.warn(
+				`[loader] Post-processing: ${processedItems.length}/${total} succeeded ` +
+				`(${failureRate.toFixed(1)}% failure rate)`
+			);
+
+			// Alert if high failure rate
+			if (failureRate > 10) {
+				console.warn(
+					`[loader] WARNING: High failure rate. Check postProcessItem for ${config.name}`
+				);
+			}
+		}
+	}
 
 	// Filter by question type if specified
 	if (options?.questionType) {
@@ -175,19 +205,6 @@ function mapSingleItem(
 		for (const [key, path] of Object.entries(schema.metadata)) {
 			metadata[key] = getField(raw, path as string);
 		}
-	}
-
-	// LongMemEval: attach dataset-native relevance labels for retrieval metrics.
-	// The official retrieval evaluation treats any corpus_id containing "answer" as relevant.
-	if (config.name === "longmemeval") {
-		const corpusIds = contexts
-			.map((c) => c.metadata?.corpusId)
-			.filter((x): x is string => typeof x === "string");
-		const answerCorpusIds = corpusIds.filter((cid) => cid.includes("answer"));
-		metadata.corpusIds = corpusIds;
-		metadata.answerCorpusIds = answerCorpusIds;
-		metadata.hasRelevanceLabels = answerCorpusIds.length > 0;
-		metadata.isAbstention = String(id).includes("_abs");
 	}
 
 	// Determine question type if available

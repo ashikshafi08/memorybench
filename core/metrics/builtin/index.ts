@@ -78,34 +78,34 @@ export function getBuiltinMetrics(): MetricCalculator[] {
 		new Bleu1Metric(),
 		new RougeLMetric(),
 		// End-to-end retrieval success
-		new SuccessAt5Metric(),
-		new SuccessAt10Metric(),
+		SuccessAt5Metric,
+		SuccessAt10Metric,
 		// Context recall (strictest to loosest)
-		new RecallAt1Metric(),
-		new RecallAt3Metric(),
-		new RecallAt5Metric(),
-		new RecallAt10Metric(),
+		RecallAt1Metric,
+		RecallAt3Metric,
+		RecallAt5Metric,
+		RecallAt10Metric,
 
 		// === Retrieval Metrics (for pure retrieval benchmarks) ===
-		new NDCGAt5Metric(),
-		new NDCGAt10Metric(),
-		new PrecisionAt1Metric(),
-		new PrecisionAt3Metric(),
-		new PrecisionAt5Metric(),
-		new PrecisionAt10Metric(),
+		NDCGAt5Metric,
+		NDCGAt10Metric,
+		PrecisionAt1Metric,
+		PrecisionAt3Metric,
+		PrecisionAt5Metric,
+		PrecisionAt10Metric,
 		new MRRMetric(),
 		new AvgRetrievalScoreMetric(),
 		// File-level metrics (for SWE-bench style benchmarks)
-		new FileRecallAt5Metric(),
-		new FileRecallAt10Metric(),
+		FileRecallAt5Metric,
+		FileRecallAt10Metric,
 		new FileMRRMetric(),
-		
+
 		// === Chunking Quality Metrics (for code chunking benchmarks) ===
 		// IoU measures how precisely chunks align with ground truth line ranges
-		new IoUAt1Metric(),
-		new IoUAt3Metric(),
-		new IoUAt5Metric(),
-		new IoUAt10Metric(),
+		IoUAt1Metric,
+		IoUAt3Metric,
+		IoUAt5Metric,
+		IoUAt10Metric,
 
 		// === Performance Metrics ===
 		new AvgSearchLatencyMetric(),

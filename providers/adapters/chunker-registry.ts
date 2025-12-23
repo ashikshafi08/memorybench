@@ -12,6 +12,7 @@
  * This replaces 4 separate adapter files (~548 lines) with one registry (~120 lines).
  */
 
+import { BaseRegistry } from "../../core/registry/index.ts";
 import type { ChonkieChunkResult } from "./chonkie-bridge.ts";
 import type { LlamaIndexChunkResult } from "./llamaindex-bridge.ts";
 import type { LangChainChunkResult } from "./langchain-bridge.ts";
@@ -45,6 +46,8 @@ export interface ChunkingConfig {
 export interface ChunkerDefinition {
 	/** Chunker name (matches config.name) */
 	name: string;
+	/** Optional aliases for the chunker */
+	aliases?: readonly string[];
 	/** Async function to chunk content */
 	chunkFn: (
 		content: string,
@@ -56,29 +59,80 @@ export interface ChunkerDefinition {
 }
 
 /**
- * Registry of available chunkers.
+ * Registry for chunker implementations.
+ * Extends BaseRegistry for consistent behavior with other registries.
  */
-const CHUNKERS = new Map<string, ChunkerDefinition>();
+class ChunkerRegistry extends BaseRegistry<ChunkerDefinition> {
+	constructor() {
+		super({ name: "ChunkerRegistry", throwOnConflict: true });
+	}
 
-/**
- * Register a chunker in the registry.
- */
+	/**
+	 * Register a chunker definition.
+	 * Validates that chunkFn is provided before registration.
+	 */
+	register(def: ChunkerDefinition): void {
+		if (!def.chunkFn) {
+			throw new Error(
+				`Invalid ChunkerDefinition: "${def.name}" must have chunkFn`
+			);
+		}
+		this.registerItem(def.name, def, def.aliases);
+	}
+
+	/**
+	 * Get a chunker by name or alias.
+	 */
+	getChunker(nameOrAlias: string): ChunkerDefinition | undefined {
+		return this.get(nameOrAlias);
+	}
+
+	/**
+	 * Check if a chunker exists.
+	 */
+	hasChunker(nameOrAlias: string): boolean {
+		return this.has(nameOrAlias);
+	}
+
+	/**
+	 * Get all registered chunker names.
+	 */
+	getChunkerNames(): string[] {
+		return this.keys();
+	}
+}
+
+// Singleton instance
+let globalChunkerRegistry: ChunkerRegistry | null = null;
+
+export function getChunkerRegistry(): ChunkerRegistry {
+	if (!globalChunkerRegistry) {
+		globalChunkerRegistry = new ChunkerRegistry();
+		// Auto-register built-in chunkers
+		registerBuiltinChunkers();
+	}
+	return globalChunkerRegistry;
+}
+
+export function resetChunkerRegistry(): void {
+	globalChunkerRegistry = null;
+}
+
+// Backward-compatible exports
 export function registerChunker(def: ChunkerDefinition): void {
-	CHUNKERS.set(def.name, def);
+	getChunkerRegistry().register(def);
 }
 
-/**
- * Get a chunker by name.
- */
-export function getChunker(name: string): ChunkerDefinition | undefined {
-	return CHUNKERS.get(name);
+export function getChunker(nameOrAlias: string): ChunkerDefinition | undefined {
+	return getChunkerRegistry().getChunker(nameOrAlias);
 }
 
-/**
- * Get all registered chunker names.
- */
+export function hasChunker(nameOrAlias: string): boolean {
+	return getChunkerRegistry().hasChunker(nameOrAlias);
+}
+
 export function getChunkerNames(): string[] {
-	return [...CHUNKERS.keys()];
+	return getChunkerRegistry().getChunkerNames();
 }
 
 // ============================================================================
@@ -86,10 +140,15 @@ export function getChunkerNames(): string[] {
 // ============================================================================
 
 /**
- * code-chunk AST chunker
- * Uses tree-sitter parsing for semantic code chunking.
+ * Register all built-in chunkers.
+ * Called automatically when the registry is first accessed.
  */
-registerChunker({
+function registerBuiltinChunkers(): void {
+	/**
+	 * code-chunk AST chunker
+	 * Uses tree-sitter parsing for semantic code chunking.
+	 */
+	registerChunker({
 	name: "code-chunk-ast",
 	chunkFn: async (content, filepath, config) => {
 		try {
@@ -269,7 +328,8 @@ registerChunker({
 			id: c.id,
 		}));
 	},
-});
+	});
+}
 
 // ============================================================================
 // Helper Functions (moved from code-chunk-fixed.ts)

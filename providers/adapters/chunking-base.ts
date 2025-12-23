@@ -2,7 +2,7 @@
  * Base class for chunking providers.
  *
  * Provides common functionality for chunk-and-embed providers:
- * - In-memory vector storage per runTag
+ * - Pluggable vector storage (defaults to in-memory)
  * - Cosine similarity search
  * - Embedding provider integration
  */
@@ -12,30 +12,17 @@ import { LocalProvider } from "../base/local-provider.ts";
 import type { SearchOptions } from "../base/types.ts";
 import {
 	createEmbeddingProviderFromYaml,
-	cosineSimilarity,
 	type EmbeddingProvider,
 	type EmbeddingStats,
 } from "../embeddings/index.ts";
+import {
+	type VectorStore,
+	type StoredChunk,
+	InMemoryVectorStore,
+} from "../storage/index.ts";
 
-/**
- * A chunk with its metadata and embedding.
- */
-export interface StoredChunk {
-	/** Unique chunk ID (e.g., filepath:chunkIndex) */
-	id: string;
-	/** Chunk text content */
-	content: string;
-	/** Embedding vector */
-	embedding: number[];
-	/** Chunk metadata */
-	metadata: {
-		filepath: string;
-		startLine?: number;
-		endLine?: number;
-		chunkIndex: number;
-		[key: string]: unknown;
-	};
-}
+// Re-export StoredChunk for backward compatibility
+export type { StoredChunk } from "../storage/index.ts";
 
 /**
  * Result of chunking a file.
@@ -53,13 +40,35 @@ export interface ChunkResult {
  * Abstract base class for chunk-and-embed providers.
  *
  * Subclasses must implement the `chunkText` method to define their chunking strategy.
+ *
+ * Vector storage is pluggable - use `config.local.vectorStore` to inject
+ * a custom implementation (e.g., Pinecone, Weaviate, Mem0).
  */
 export abstract class ChunkingProvider extends LocalProvider {
 	protected embeddingProvider: EmbeddingProvider | null = null;
-	protected stores = new Map<string, StoredChunk[]>();
+	protected vectorStore: VectorStore;
 
 	constructor(config: ProviderConfig) {
 		super(config);
+		// Use injected vector store or default to in-memory
+		const injectedStore = config.local?.vectorStore;
+		if (injectedStore) {
+			// Validate that the injected store implements VectorStore interface
+			if (
+				typeof injectedStore !== "object" ||
+				typeof (injectedStore as VectorStore).add !== "function" ||
+				typeof (injectedStore as VectorStore).search !== "function" ||
+				typeof (injectedStore as VectorStore).clear !== "function"
+			) {
+				throw new Error(
+					"Invalid vectorStore: must implement VectorStore interface " +
+					"(add, search, clear methods required)"
+				);
+			}
+			this.vectorStore = injectedStore as VectorStore;
+		} else {
+			this.vectorStore = new InMemoryVectorStore();
+		}
 	}
 
 	protected override async doInitialize(): Promise<void> {
@@ -70,7 +79,10 @@ export abstract class ChunkingProvider extends LocalProvider {
 	}
 
 	protected override async doCleanup(): Promise<void> {
-		this.stores.clear();
+		// InMemoryVectorStore has clearAll(), but interface doesn't require it
+		if ("clearAll" in this.vectorStore && typeof this.vectorStore.clearAll === "function") {
+			(this.vectorStore as InMemoryVectorStore).clearAll();
+		}
 	}
 
 	/**
@@ -88,12 +100,6 @@ export abstract class ChunkingProvider extends LocalProvider {
 	override async addContext(data: PreparedData, runTag: string): Promise<void> {
 		this.ensureInitialized();
 
-		// Get or create store for this runTag
-		if (!this.stores.has(runTag)) {
-			this.stores.set(runTag, []);
-		}
-		const store = this.stores.get(runTag)!;
-
 		// Extract filepath from metadata
 		const filepath = (data.metadata.filepath as string) || data.id;
 
@@ -108,12 +114,13 @@ export abstract class ChunkingProvider extends LocalProvider {
 		const texts = chunks.map((chunk) => chunk.content);
 		const embedResult = await this.embeddingProvider!.embedBatch(texts);
 
-		// Store chunks with embeddings
+		// Build stored chunks with embeddings
+		const storedChunks: StoredChunk[] = [];
 		for (let i = 0; i < chunks.length; i++) {
 			const chunk = chunks[i]!;
 			const embedding = embedResult.embeddings[i]!;
 
-			const storedChunk: StoredChunk = {
+			storedChunks.push({
 				id: `${filepath}:${i}`,
 				content: chunk.content,
 				embedding: embedding.vector,
@@ -124,10 +131,11 @@ export abstract class ChunkingProvider extends LocalProvider {
 					chunkIndex: i,
 					...data.metadata,
 				},
-			};
-
-			store.push(storedChunk);
+			});
 		}
+
+		// Add to vector store
+		await this.vectorStore.add(runTag, storedChunks);
 	}
 
 	/**
@@ -140,47 +148,29 @@ export abstract class ChunkingProvider extends LocalProvider {
 	): Promise<SearchResult[]> {
 		this.ensureInitialized();
 
-		const store = this.stores.get(runTag);
-		if (!store || store.length === 0) {
-			return [];
-		}
-
-		const limit = options?.limit ?? 10;
-		const threshold = options?.threshold ?? 0;
-
 		// Embed the query
 		const queryEmbedding = await this.embeddingProvider!.embed(query);
 
-		// Calculate similarities for all chunks
-		const scored = store.map((chunk) => ({
-			chunk,
-			score: cosineSimilarity(queryEmbedding.vector, chunk.embedding),
+		// Search vector store
+		const scored = await this.vectorStore.search(runTag, queryEmbedding.vector, {
+			limit: options?.limit ?? 10,
+			threshold: options?.threshold ?? 0,
+		});
+
+		// Convert to SearchResult format
+		return scored.map(({ chunk, score }) => ({
+			id: chunk.id,
+			content: chunk.content,
+			score,
+			metadata: chunk.metadata,
 		}));
-
-		// Sort by score descending and filter by threshold
-		scored.sort((a, b) => b.score - a.score);
-
-		const results: SearchResult[] = [];
-		for (const { chunk, score } of scored) {
-			if (results.length >= limit) break;
-			if (score < threshold) continue;
-
-			results.push({
-				id: chunk.id,
-				content: chunk.content,
-				score,
-				metadata: chunk.metadata,
-			});
-		}
-
-		return results;
 	}
 
 	/**
 	 * Clear all data for a runTag.
 	 */
 	override async clear(runTag: string): Promise<void> {
-		this.stores.delete(runTag);
+		await this.vectorStore.clear(runTag);
 	}
 
 	/**

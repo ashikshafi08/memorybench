@@ -8,7 +8,7 @@ import { Registry, getRegistry } from "../core/registry.ts";
 import { CheckpointManager } from "../core/checkpoint.ts";
 import { BenchmarkRunner, type ProgressCallback, type RunResult } from "../core/runner.ts";
 import { ResultsStore } from "../core/results.ts";
-import { getDefaultRegistry, UnknownMetricError, getAvailableMetrics } from "../core/metrics/index.ts";
+import { getDefaultRegistry, getAvailableMetrics } from "../core/metrics/index.ts";
 import type { MetricResult } from "../core/metrics/interface.ts";
 import { tableCommand } from "./table.ts";
 import { policyCompareCommand, parsePolicyCompareOptions } from "./policy-compare.ts";
