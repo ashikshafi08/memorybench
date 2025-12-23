@@ -17,13 +17,14 @@ This guide is for developers who want to:
 2. [Adding a New Chunker](#adding-a-new-chunker)
 3. [Adding a New Metric](#adding-a-new-metric)
 4. [Adding a New Benchmark](#adding-a-new-benchmark)
-5. [Adding a New Dataset](#adding-a-new-dataset)
-6. [Adding a New Provider (LLM/RAG)](#adding-a-new-provider-llmrag)
-7. [Creating Custom Evaluators](#creating-custom-evaluators)
-8. [Testing Your Extensions](#testing-your-extensions)
-9. [Advanced Topics](#advanced-topics)
-10. [API Reference](#api-reference)
-11. [Troubleshooting](#troubleshooting)
+5. [Creating Benchmark Packs](#creating-benchmark-packs)
+6. [Adding a New Dataset](#adding-a-new-dataset)
+7. [Adding a New Provider (LLM/RAG)](#adding-a-new-provider-llmrag)
+8. [Creating Custom Evaluators](#creating-custom-evaluators)
+9. [Testing Your Extensions](#testing-your-extensions)
+10. [Advanced Topics](#advanced-topics)
+11. [API Reference](#api-reference)
+12. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -455,6 +456,338 @@ Different benchmarks use different strategies:
 | CrossCodeEval | Dependency coverage | `crossFileCoverage()` |
 
 See `benchmarks/packs/generic-code-retrieval-pack.ts` for real-world examples.
+
+---
+
+## Creating Benchmark Packs
+
+### What Are Packs?
+
+**Benchmark Packs** are versioned, paper-faithful implementations of benchmark evaluation logic. They encode the exact prompts, scoring methods, and relevance definitions from research papers, ensuring reproducibility and preventing evaluation drift.
+
+**Key Benefits:**
+- ✅ **Paper-faithful**: Exact prompts from research papers
+- ✅ **Versioned**: Each pack has a unique ID (e.g., `longmemeval@paper-v1`)
+- ✅ **Sealed semantics**: Cannot be overridden by YAML configs
+- ✅ **Reproducible**: SHA-256 hashes detect prompt drift
+- ✅ **Transparent**: All evaluation logic in code, not hidden in configs
+
+### When to Create a Pack
+
+**Create a pack when:**
+- You want paper-faithful evaluation (matches original research)
+- You need to prevent evaluation drift
+- You have multiple question types with different evaluation logic
+- You want versioned, reproducible results
+
+**Skip a pack when:**
+- Quick experiments or prototyping
+- Simple benchmarks that don't need paper-faithful implementation
+- You want maximum flexibility in YAML configs
+
+### Quick Example (1-2 hours)
+
+**1. Create pack file in `benchmarks/packs/`:**
+
+```typescript
+// benchmarks/packs/my-memory-pack.ts
+import type { BenchmarkPack, PromptArtifact, PackEvaluationResult, RunConfig } from "./interface.ts";
+import type { BenchmarkItem, SearchResult } from "../../core/config.ts";
+import { createPromptArtifact } from "./utils.ts";
+import { getModelProvider } from "../../core/llm/index.ts";
+import { generateText } from "ai";
+
+export const myMemoryPack: BenchmarkPack = {
+  benchmarkName: "my-memory",
+  packId: "my-memory@v1",
+  
+  sealedSemantics: {
+    prompts: true,    // Pack owns answer + judge prompts
+    scoring: true,    // Pack owns evaluation logic
+    relevance: true,  // Pack owns relevance definitions
+  },
+  
+  // Build answer prompt (paper-faithful)
+  buildAnswerPrompt({ item, retrieved, run }): PromptArtifact {
+    const context = retrieved.map(r => r.content).join("\n\n");
+    const prompt = `Context:\n${context}\n\nQuestion: ${item.question}\nAnswer:`;
+    return createPromptArtifact(prompt);
+  },
+  
+  // Build judge prompt (optional, for LLM judge)
+  buildJudgePrompt({ item, answer, run }): PromptArtifact | undefined {
+    const prompt = `Question: ${item.question}\nExpected: ${item.answer}\nActual: ${answer}\n\nIs correct? Answer yes or no.`;
+    return createPromptArtifact(prompt);
+  },
+  
+  // Full evaluation pipeline
+  async evaluate({ item, retrieved, run }): Promise<PackEvaluationResult> {
+    // 1. Generate answer
+    const answerPrompt = this.buildAnswerPrompt({ item, retrieved, run });
+    const model = getModelProvider(run.answeringModel || "gpt-4");
+    const { text: answer } = await generateText({ 
+      model, 
+      prompt: answerPrompt.text,
+      temperature: 0,
+    });
+    
+    // 2. Judge answer (if using LLM judge)
+    const judgePrompt = this.buildJudgePrompt?.({ item, answer: answer.trim(), run });
+    if (!judgePrompt) {
+      // Direct scoring (no judge)
+      return {
+        answer: answer.trim(),
+        score: 0.5, // Your scoring logic
+        correct: false,
+      };
+    }
+    
+    const judgeModel = getModelProvider(run.judgeModel || "gpt-4");
+    const { text: judgeResponse } = await generateText({ 
+      model: judgeModel, 
+      prompt: judgePrompt.text,
+      temperature: 0,
+    });
+    
+    const correct = judgeResponse.toLowerCase().trim().startsWith("yes");
+    
+    return {
+      answer: answer.trim(),
+      score: correct ? 1 : 0,
+      correct,
+      judgeResponse: judgeResponse.trim(),
+    };
+  },
+  
+  // Determine relevance for retrieval metrics
+  isRelevant({ item, result }): boolean {
+    // Check if result ID matches ground truth
+    const groundTruthIds = item.metadata?.groundTruthIds as string[] | undefined;
+    if (groundTruthIds) {
+      return groundTruthIds.includes(result.id);
+    }
+    
+    // Fallback: content-based matching
+    if (item.answer && result.content) {
+      const answerWords = item.answer.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      const content = result.content.toLowerCase();
+      return answerWords.some(word => content.includes(word));
+    }
+    
+    return false;
+  },
+};
+```
+
+**2. Register in `benchmarks/packs/index.ts`:**
+
+```typescript
+import { myMemoryPack } from "./my-memory-pack.ts";
+
+const BUILTIN_PACKS: readonly BenchmarkPack[] = [
+  // ... existing packs ...
+  myMemoryPack,  // Add here
+] as const;
+```
+
+**3. Create YAML config (pack will be auto-detected):**
+
+```yaml
+# benchmarks/configs/my-memory.yaml
+name: my-memory
+displayName: "My Memory Benchmark"
+description: "Custom memory evaluation"
+
+data:
+  type: local
+  path: "./benchmarks/data/my-memory.json"
+  format: json
+
+# Pack will handle prompts, scoring, and relevance
+# You can still configure:
+evaluation:
+  answeringModel:
+    model: "openrouter/openai/gpt-5-nano"
+    temperature: 0
+  judge:
+    model: "openrouter/openai/gpt-5-nano"
+    temperature: 0
+
+metrics:
+  - accuracy
+  - f1
+  - recall_at_5
+```
+
+**4. Test it:**
+
+```bash
+superbench eval --benchmarks my-memory --providers mem0 --limit 5
+```
+
+### BenchmarkPack Interface
+
+```typescript
+interface BenchmarkPack {
+  benchmarkName: string;           // Must match YAML config name
+  packId: PackId;                  // Versioned ID: "benchmark@version"
+  
+  sealedSemantics: {
+    prompts: boolean;               // Pack owns answer/judge prompts
+    scoring: boolean;               // Pack owns evaluation logic
+    relevance: boolean;             // Pack owns relevance definitions
+  };
+  
+  // Build answer prompt (paper-faithful)
+  buildAnswerPrompt(input: {
+    item: BenchmarkItem;
+    retrieved: SearchResult[];
+    run: RunConfig;
+  }): PromptArtifact;
+  
+  // Build judge prompt (optional, for LLM judge)
+  buildJudgePrompt?(input: {
+    item: BenchmarkItem;
+    answer: string;
+    run: RunConfig;
+  }): PromptArtifact | undefined;
+  
+  // Full evaluation pipeline
+  evaluate(input: {
+    item: BenchmarkItem;
+    retrieved: SearchResult[];
+    run: RunConfig;
+  }): Promise<PackEvaluationResult>;
+  
+  // Determine relevance for retrieval metrics
+  isRelevant(input: {
+    item: BenchmarkItem;
+    result: SearchResult;
+  }): boolean;
+}
+```
+
+### Complexity Levels
+
+**Simple (15-30 min)**: Code retrieval benchmarks using factory
+```typescript
+import { createCodeRetrievalPack } from "./generic-code-retrieval-pack.ts";
+export const myPack = createCodeRetrievalPack("my-dataset");
+```
+
+**Medium (1-2 hours)**: Memory benchmarks with LLM judge
+- Implement 4 methods: `buildAnswerPrompt`, `buildJudgePrompt`, `evaluate`, `isRelevant`
+- ~50-100 lines of code
+
+**Complex (2-4 hours)**: Paper-faithful with multiple question types
+- Multiple question types with different prompts
+- Exact paper formatting
+- Complex relevance logic with fallbacks
+- Example: `longmemeval.ts` (~316 lines)
+
+### Key Concepts
+
+**1. Sealed Semantics**
+When a pack exists, certain YAML fields are sealed (cannot be overridden):
+- ❌ `evaluation.answerPrompt` - Pack owns answer prompts
+- ❌ `evaluation.judgePrompts` - Pack owns judge prompts
+- ❌ `evaluation.method` - Pack owns scoring method
+- ✅ `evaluation.answeringModel` - Still configurable
+- ✅ `evaluation.judge.model` - Still configurable
+
+**2. Prompt Artifacts**
+Always use `createPromptArtifact()` to get SHA-256 hashes:
+```typescript
+const prompt = "Your prompt text...";
+return createPromptArtifact(prompt);
+// Returns: { text: "...", sha256: "a3f5b2c1..." }
+```
+
+**3. Versioning**
+Packs use versioned IDs: `benchmark-name@version`
+- `longmemeval@paper-v1` - Original paper implementation
+- `longmemeval@paper-v2` - Updated version (if paper revised)
+
+**4. Relevance Logic**
+Packs define what counts as "relevant" for retrieval metrics:
+- Uses dataset-native labels (corpus IDs, evidence IDs)
+- Enables accurate recall@K, success@K calculations
+- Can have fallback strategies for robustness
+
+### Real-World Examples
+
+**Simple**: Code retrieval (factory-based)
+- See `generic-code-retrieval-pack.ts` - 4 benchmarks in ~100 lines
+
+**Medium**: Memory benchmark
+- See `locomo.ts` (~230 lines) - Category-based evaluation
+
+**Complex**: Paper-faithful with multiple types
+- See `longmemeval.ts` (~316 lines) - 6 question types, paper-faithful prompts
+
+### Common Patterns
+
+**Question-type-specific prompts:**
+```typescript
+buildJudgePrompt({ item, answer, run }): PromptArtifact | undefined {
+  const questionType = item.metadata?.questionType as string;
+  
+  if (questionType === "temporal-reasoning") {
+    // Allow off-by-one errors for dates
+    return createPromptArtifact(`...`);
+  } else if (questionType === "knowledge-update") {
+    // Accept updated answers
+    return createPromptArtifact(`...`);
+  }
+  
+  // Default prompt
+  return createPromptArtifact(`...`);
+}
+```
+
+**Multiple fallback relevance strategies:**
+```typescript
+isRelevant({ item, result }): boolean {
+  // Tier 1: Explicit IDs
+  if (item.metadata?.groundTruthIds?.includes(result.id)) return true;
+  
+  // Tier 2: Content-based matching
+  if (item.answer && result.content.includes(item.answer)) return true;
+  
+  // Tier 3: Keyword matching
+  const keywords = extractKeywords(item.question);
+  return keywords.some(k => result.content.includes(k));
+}
+```
+
+### Testing Your Pack
+
+```bash
+# Quick test
+superbench eval --benchmarks my-memory --providers mem0 --limit 2
+
+# View results with breakdown
+superbench results <run-id> --breakdown --metrics accuracy f1
+
+# Check prompt hashes (for drift detection)
+# Hashes are automatically computed and stored
+```
+
+### Troubleshooting
+
+**"Sealed semantics violation"**
+- Remove `evaluation.answerPrompt` or `evaluation.judgePrompts` from YAML
+- The pack owns these fields
+
+**"Pack not found"**
+- Ensure pack is registered in `benchmarks/packs/index.ts`
+- Check `benchmarkName` matches YAML config name
+
+**"Judge prompt required"**
+- Implement `buildJudgePrompt` or return `undefined` if not using LLM judge
+- If using LLM judge, `buildJudgePrompt` must return a prompt
+
+For more details, see `docs/PACKS_EXPLANATION.md` and `docs/CREATING_PACKS.md`.
 
 ---
 
